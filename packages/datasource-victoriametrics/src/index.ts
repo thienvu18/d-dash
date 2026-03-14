@@ -11,8 +11,10 @@ import type {
   VisualizationKind,
 } from "@d-dash/core";
 
+/** Minimal fetch function contract consumed by this adapter. */
 export type FetchFn = (url: string, init?: FetchRequestInit) => Promise<FetchResponse>;
 
+/** Minimal request-init shape for injected fetch clients. */
 export type FetchRequestInit = {
   method?: string;
   headers?: Record<string, string>;
@@ -20,6 +22,7 @@ export type FetchRequestInit = {
   signal?: AbortSignal;
 };
 
+/** Minimal fetch response shape consumed by this adapter. */
 export type FetchResponse = {
   ok: boolean;
   status: number;
@@ -27,6 +30,7 @@ export type FetchResponse = {
   json(): Promise<unknown>;
 };
 
+/** Configuration options for creating the VictoriaMetrics datasource adapter. */
 export type VictoriaMetricsDatasourceAdapterOptions = {
   id: string;
   baseUrl: string;
@@ -178,6 +182,7 @@ function normalizeVmMetricDiscoveryResponse(raw: unknown, datasourceId: string):
     }));
 }
 
+/** Creates a d-dash datasource adapter backed by VictoriaMetrics HTTP APIs. */
 export function createVictoriaMetricsDatasourceAdapter(
   options: VictoriaMetricsDatasourceAdapterOptions,
 ): DatasourceAdapter {

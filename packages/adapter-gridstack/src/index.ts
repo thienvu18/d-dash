@@ -30,6 +30,7 @@ export type GridStackFactory = {
   init(options?: Record<string, unknown>, el?: HTMLElement): GridStackInstance;
 };
 
+/** Configuration options for creating a Gridstack adapter instance. */
 export type GridstackAdapterOptions = {
   /** The GridStack class (or compatible factory). Injected to keep the adapter testable. */
   GridStack: GridStackFactory;

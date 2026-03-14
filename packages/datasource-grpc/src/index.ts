@@ -59,7 +59,9 @@ export type GrpcMetricWire =
 
 /** Transport client contract injected into the gRPC datasource adapter. */
 export type GrpcDatasourceClient = {
+  /** Execute a datasource query over gRPC and return normalized wire envelope. */
   query(request: GrpcQueryEnvelope, context: RuntimeContext): Promise<GrpcResponseEnvelope>;
+  /** Optionally discover supported metrics from backend metadata services. */
   getMetrics?(): Promise<GrpcMetricWire[]>;
 };
 

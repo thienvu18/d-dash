@@ -17,6 +17,7 @@ import type { RuntimeContext } from "@d-dash/core";
 /** Minimal subset of the Fetch API used by this adapter. */
 export type FetchFn = (url: string, init?: FetchRequestInit) => Promise<FetchResponse>;
 
+/** Minimal request init shape used by the adapter's injected fetch function. */
 export type FetchRequestInit = {
   method?: string;
   headers?: Record<string, string>;
@@ -24,6 +25,7 @@ export type FetchRequestInit = {
   signal?: AbortSignal;
 };
 
+/** Minimal fetch response shape consumed by the adapter. */
 export type FetchResponse = {
   ok: boolean;
   status: number;
@@ -58,10 +60,12 @@ export type RestResponseEnvelope = {
   error?: { code: string; message: string };
 };
 
+/** REST response frame wire contract. */
 export type RestFrame = {
   fields: RestField[];
 };
 
+/** REST response field wire contract. */
 export type RestField = {
   name: string;
   type: "time" | "number" | "string" | "boolean";
@@ -73,6 +77,7 @@ export type RestField = {
 // Adapter options
 // ---------------------------------------------------------------------------
 
+/** Configuration options for creating the REST datasource adapter. */
 export type RestDatasourceAdapterOptions = {
   /**
    * Identifier used to register this adapter in the d-dash registry.
