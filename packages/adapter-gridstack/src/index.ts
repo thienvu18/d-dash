@@ -2,6 +2,7 @@ import type {
   GridAdapter,
   GridCapabilities,
   GridLayoutChange,
+  GridLayoutChangeHandler,
 } from "@d-dash/core";
 
 /**
@@ -54,8 +55,6 @@ export type GridstackAdapterOptions = {
  */
 export type GridstackTarget = {
   el: HTMLElement;
-  /** Optional host callback for user-initiated move/resize updates. */
-  onLayoutChange?: (changes: GridLayoutChange[]) => void;
 };
 
 /**
@@ -76,6 +75,7 @@ export function createGridstackAdapter(
   // One GridStack instance per container element; keyed weakly to avoid leaks.
   const instances = new WeakMap<HTMLElement, GridStackInstance>();
   const changeHandlers = new WeakMap<HTMLElement, GridStackChangeCallback>();
+  const subscribers = new WeakMap<HTMLElement, Set<GridLayoutChangeHandler>>();
 
   const capabilities: GridCapabilities = {
     supportsDrag: true,
@@ -94,7 +94,7 @@ export function createGridstackAdapter(
       const grid = options.GridStack.init(options.gridOptions ?? {}, target.el);
       instances.set(target.el, grid);
 
-      if (target.onLayoutChange && typeof grid.on === "function") {
+      if (typeof grid.on === "function") {
         const handler: GridStackChangeCallback = (_event, items) => {
           const changes: GridLayoutChange[] = [];
 
@@ -119,13 +119,43 @@ export function createGridstackAdapter(
           }
 
           if (changes.length > 0) {
-            target.onLayoutChange?.(changes);
+            const listeners = subscribers.get(target.el);
+            if (listeners) {
+              for (const listener of listeners) {
+                listener(changes);
+              }
+            }
           }
         };
 
         grid.on("change", handler);
         changeHandlers.set(target.el, handler);
       }
+    },
+
+    subscribeLayoutChanges(
+      target: GridstackTarget,
+      handler: GridLayoutChangeHandler,
+    ): () => void {
+      let listeners = subscribers.get(target.el);
+      if (!listeners) {
+        listeners = new Set<GridLayoutChangeHandler>();
+        subscribers.set(target.el, listeners);
+      }
+
+      listeners.add(handler);
+
+      return () => {
+        const currentListeners = subscribers.get(target.el);
+        if (!currentListeners) {
+          return;
+        }
+
+        currentListeners.delete(handler);
+        if (currentListeners.size === 0) {
+          subscribers.delete(target.el);
+        }
+      };
     },
 
     applyLayout(changes: GridLayoutChange[], target: GridstackTarget): void {
@@ -159,6 +189,7 @@ export function createGridstackAdapter(
         grid.destroy(false);
         instances.delete(target.el);
         changeHandlers.delete(target.el);
+        subscribers.delete(target.el);
       }
     },
   };

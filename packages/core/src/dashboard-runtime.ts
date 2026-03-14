@@ -90,6 +90,17 @@ export type ApplyDashboardLayoutInput<TTarget = unknown> = {
   target: TTarget;
 };
 
+/** Inputs for binding grid layout-change events to visualization resize hooks. */
+export type BindLayoutResizeInput<
+  TGridTarget = unknown,
+  TWidgetTarget = unknown,
+> = {
+  session: DashboardSession;
+  gridId: string;
+  gridTarget: TGridTarget;
+  targetByWidgetId: Record<string, TWidgetTarget>;
+};
+
 /** Structured runtime error union thrown by dashboard runtime APIs. */
 export type DashboardRuntimeError = DDashError & {
   code:
@@ -118,6 +129,9 @@ export type DashboardRuntime = {
   applyDashboardLayout<TTarget = unknown>(
     input: ApplyDashboardLayoutInput<TTarget>,
   ): Promise<void>;
+  bindLayoutResize<TGridTarget = unknown, TWidgetTarget = unknown>(
+    input: BindLayoutResizeInput<TGridTarget, TWidgetTarget>,
+  ): Promise<() => void>;
   createSession(dashboard: PersistedDashboard): DashboardSession;
   createSessionWithRegistryMetrics(
     dashboard: PersistedDashboard,
@@ -235,6 +249,47 @@ export function createDashboardRuntime(
       }
 
       await adapter.applyLayout(changes, input.target);
+    },
+
+    async bindLayoutResize<TGridTarget = unknown, TWidgetTarget = unknown>(
+      input: BindLayoutResizeInput<TGridTarget, TWidgetTarget>,
+    ): Promise<() => void> {
+      const grid = options.registry.requireGrid(input.gridId);
+      if (!grid.subscribeLayoutChanges) {
+        return () => {};
+      }
+
+      const widgetById = new Map<string, PersistedWidget>();
+      for (const widget of input.session.widgets) {
+        widgetById.set(widget.id, widget);
+      }
+
+      const unsubscribe = await grid.subscribeLayoutChanges(
+        input.gridTarget,
+        (changes) => {
+          // Resize each affected widget once per grid event batch.
+          const touchedWidgetIds = new Set(changes.map((change) => change.widgetId));
+
+          for (const widgetId of touchedWidgetIds) {
+            const widget = widgetById.get(widgetId);
+            if (!widget) {
+              continue;
+            }
+
+            const target = input.targetByWidgetId[widget.id];
+            if (target === undefined) {
+              continue;
+            }
+
+            const adapter = options.registry.requireVisualization(
+              widget.visualization.type,
+            );
+            adapter.resize?.(target);
+          }
+        },
+      );
+
+      return unsubscribe;
     },
 
     createSession(dashboard: PersistedDashboard): DashboardSession {

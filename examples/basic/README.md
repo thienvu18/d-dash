@@ -13,6 +13,24 @@ Both paths wire the current d-dash runtime and adapters together:
 - REST datasource adapter
 - VictoriaMetrics datasource adapter
 
+The browser demo explicitly demonstrates the full runtime workflow:
+
+- validate dashboard
+- preflight adapter availability
+- create session
+- initialize grid and apply layout
+- execute widget
+- observe runtime and layout events
+
+It also uses `runtime.bindLayoutResize(...)` to bridge grid layout changes to
+visualization adapter `resize(...)` calls through core contracts.
+
+The event stream is shown on the page so host integrators can see execution and
+layout callbacks in real time.
+
+For small widgets, the chart host now enforces a minimum chart height so ECharts
+remains visible during aggressive resize operations.
+
 The example uses lightweight in-memory mocks for gridstack, ECharts, and fetch so it can run in Node without a browser.
 
 ## Run

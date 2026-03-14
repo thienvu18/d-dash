@@ -67,6 +67,7 @@ export type {
   GridAdapter,
   GridCapabilities,
   GridLayoutChange,
+  GridLayoutChangeHandler,
   ScalarValue,
   VisualizationAdapter,
   VisualizationCapabilities,
@@ -96,6 +97,7 @@ export {
 
 export type {
   ApplyDashboardLayoutInput,
+  BindLayoutResizeInput,
   DashboardPreflightResult,
   DashboardRuntimeError,
   DashboardRuntime,

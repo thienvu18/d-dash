@@ -130,12 +130,23 @@ export type GridLayoutChange = {
   h: number;
 };
 
+/** Callback invoked when grid layout changes are emitted by a grid adapter. */
+export type GridLayoutChangeHandler = (changes: GridLayoutChange[]) => void;
+
 /** Grid adapter public contract implemented by plugins. */
 export interface GridAdapter<TTarget = unknown> {
   readonly id: string;
   readonly capabilities?: GridCapabilities;
   /** Initialize grid runtime for the provided host target. */
   init(target: TTarget): Promise<void> | void;
+  /**
+   * Optional subscription API for host/runtime orchestration.
+   * Returns an unsubscribe function.
+   */
+  subscribeLayoutChanges?(
+    target: TTarget,
+    handler: GridLayoutChangeHandler,
+  ): (() => void) | Promise<() => void>;
   /** Apply normalized layout changes for widgets. */
   applyLayout(
     changes: GridLayoutChange[],

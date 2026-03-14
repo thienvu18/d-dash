@@ -165,25 +165,46 @@ describe("createGridstackAdapter", () => {
     assert.equal(calls.destroy[0].removeDOM, false);
   });
 
-  test("init wires change events to target.onLayoutChange callback", () => {
+  test("subscribeLayoutChanges receives normalized grid change events", () => {
     const { factory, emitChange } = makeGridStackFactory();
     const adapter = createGridstackAdapter({ GridStack: factory });
-    const received = [];
     const target = makeTarget();
-    target.onLayoutChange = (changes) => received.push(...changes);
+    const received = [];
 
     adapter.init(target);
-    emitChange(target.el, [{ id: "w1", x: 1, y: 2, w: 3, h: 4 }]);
+    const unsubscribe = adapter.subscribeLayoutChanges(target, (changes) => {
+      received.push(...changes);
+    });
+
+    emitChange(target.el, [{ id: "w1", x: 4, y: 5, w: 6, h: 7 }]);
 
     assert.equal(received.length, 1);
-    assert.deepEqual(received[0], { widgetId: "w1", x: 1, y: 2, w: 3, h: 4 });
+    assert.deepEqual(received[0], { widgetId: "w1", x: 4, y: 5, w: 6, h: 7 });
+
+    unsubscribe();
+  });
+
+  test("subscribeLayoutChanges unsubscribe stops receiving events", () => {
+    const { factory, emitChange } = makeGridStackFactory();
+    const adapter = createGridstackAdapter({ GridStack: factory });
+    const target = makeTarget();
+    const received = [];
+
+    adapter.init(target);
+    const unsubscribe = adapter.subscribeLayoutChanges(target, (changes) => {
+      received.push(...changes);
+    });
+
+    unsubscribe();
+    emitChange(target.el, [{ id: "w1", x: 4, y: 5, w: 6, h: 7 }]);
+
+    assert.equal(received.length, 0);
   });
 
   test("destroy unregisters change event listener", () => {
     const { factory, calls } = makeGridStackFactory();
     const adapter = createGridstackAdapter({ GridStack: factory });
     const target = makeTarget();
-    target.onLayoutChange = () => {};
 
     adapter.init(target);
     adapter.destroy(target);

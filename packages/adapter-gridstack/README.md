@@ -23,10 +23,9 @@ registry.registerGrid(createGridstackAdapter({ GridStack }));
 ```ts
 type GridstackTarget = {
   el: HTMLElement;
-  onLayoutChange?: (changes: GridLayoutChange[]) => void;
 };
 ```
 
 Widget elements should expose `gs-id="<widgetId>"` so layout changes can be mapped.
-When users drag or resize items, the adapter forwards normalized layout changes
-to `onLayoutChange`.
+When users drag or resize items, subscribe to normalized layout changes through
+`adapter.subscribeLayoutChanges(target, handler)`.

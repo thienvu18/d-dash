@@ -22,6 +22,10 @@
       <header class="hero">
         <h1>d-dash Browser Demo</h1>
         <p>Real gridstack + ECharts integration through d-dash adapters.</p>
+        <p>
+          Workflow: validate -> preflight -> create session -> apply layout ->
+          execute widget -> runtime events.
+        </p>
         <p id="app-state" class="status">Loading...</p>
       </header>
 
@@ -33,6 +37,11 @@
             </div>
           </div>
         </div>
+
+        <section class="events" aria-live="polite" aria-label="Runtime events">
+          <h2>Event stream</h2>
+          <ul id="event-log"></ul>
+        </section>
       </section>
     </main>
 

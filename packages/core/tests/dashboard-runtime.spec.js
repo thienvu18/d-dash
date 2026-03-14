@@ -164,6 +164,94 @@ describe("createDashboardRuntime", () => {
     ]);
   });
 
+  test("bindLayoutResize subscribes to grid changes and resizes affected widget targets", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+
+    const resizedTargets = [];
+    registry.registerVisualization({
+      type: "timeseries",
+      render() {},
+      resize(target) {
+        resizedTargets.push(target);
+      },
+    });
+
+    let emitLayoutChange = null;
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      subscribeLayoutChanges(_target, handler) {
+        emitLayoutChange = handler;
+        return () => {
+          emitLayoutChange = null;
+        };
+      },
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const session = runtime.createSession(makeDashboard());
+    const widgetTarget = { el: "widget-el" };
+
+    const unsubscribe = await runtime.bindLayoutResize({
+      session,
+      gridId: "gridstack",
+      gridTarget: { el: "grid-el" },
+      targetByWidgetId: { w1: widgetTarget },
+    });
+
+    assert.equal(typeof emitLayoutChange, "function");
+    emitLayoutChange?.([
+      { widgetId: "w1", x: 1, y: 2, w: 3, h: 4 },
+      { widgetId: "w1", x: 1, y: 2, w: 3, h: 5 },
+    ]);
+
+    assert.equal(resizedTargets.length, 1);
+    assert.equal(resizedTargets[0], widgetTarget);
+
+    unsubscribe();
+    assert.equal(emitLayoutChange, null);
+  });
+
+  test("bindLayoutResize returns no-op unsubscribe when grid adapter lacks subscriptions", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+    registry.registerVisualization({
+      type: "timeseries",
+      render() {},
+    });
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const session = runtime.createSession(makeDashboard());
+
+    const unsubscribe = await runtime.bindLayoutResize({
+      session,
+      gridId: "gridstack",
+      gridTarget: {},
+      targetByWidgetId: {},
+    });
+
+    assert.doesNotThrow(() => unsubscribe());
+  });
+
   test("preflightDashboard returns ok when all adapters are present", () => {
     const registry = createAdapterRegistry();
     registry.registerDatasource({

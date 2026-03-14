@@ -12,11 +12,46 @@ import { createRestDatasourceAdapter } from "../../../../packages/datasource-res
 const appStateEl = document.getElementById("app-state");
 const gridEl = document.getElementById("grid-root");
 const widgetHostEl = document.getElementById("widget-chart");
+const eventLogEl = document.getElementById("event-log");
 
 function logState(message) {
   if (appStateEl) {
     appStateEl.textContent = message;
   }
+}
+
+function logEvent(message) {
+  if (!eventLogEl) {
+    return;
+  }
+
+  const item = document.createElement("li");
+  item.textContent = `${new Date().toLocaleTimeString()} | ${message}`;
+  eventLogEl.prepend(item);
+
+  while (eventLogEl.childElementCount > 16) {
+    eventLogEl.removeChild(eventLogEl.lastElementChild);
+  }
+}
+
+function describeElementSize(el) {
+  return `${el.clientWidth}x${el.clientHeight}`;
+}
+
+async function waitForElementSize(
+  el,
+  { minWidth = 240, minHeight = 120, timeoutMs = 1200 } = {},
+) {
+  const startedAt = performance.now();
+
+  while (performance.now() - startedAt < timeoutMs) {
+    if (el.clientWidth >= minWidth && el.clientHeight >= minHeight) {
+      return true;
+    }
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+
+  return false;
 }
 
 function makeDashboard() {
@@ -92,6 +127,8 @@ async function main() {
     throw new Error("Missing required DOM elements for browser demo.");
   }
 
+  logEvent("Bootstrapping registry and adapters");
+
   const registry = createAdapterRegistry();
 
   registry.registerGrid(createGridstackAdapter({ GridStack }));
@@ -108,9 +145,18 @@ async function main() {
     }),
   );
 
+  logEvent("Registered grid, visualization, and datasource adapters");
+
   const runtime = createDashboardRuntime({
     registry,
     onEvent(event) {
+      if (event.type === "widget.execute.started") {
+        logEvent(`runtime ${event.type} widget=${event.widgetId}`);
+      } else {
+        logEvent(
+          `runtime ${event.type} widget=${event.widgetId} durationMs=${event.durationMs}`,
+        );
+      }
       if (event.type === "widget.execute.completed") {
         logState(
           `Rendered ${event.widgetId} in ${event.durationMs}ms (status: ${event.status}).`,
@@ -129,29 +175,74 @@ async function main() {
       `Dashboard invalid: ${validation.issues.map((i) => i.message).join("; ")}`,
     );
   }
+  logEvent("validateDashboard: ok");
+
+  const preflight = runtime.preflightDashboard(dashboard);
+  if (!preflight.ok) {
+    throw new Error(
+      `Dashboard preflight failed: missingDatasources=${preflight.missingDatasources.join(", ") || "none"}; missingVisualizations=${preflight.missingVisualizations.join(", ") || "none"}`,
+    );
+  }
+  logEvent("preflightDashboard: all adapters resolved");
 
   const session = runtime.createSession(dashboard);
+  logEvent("createSession: completed");
 
-  const gridTarget = { el: gridEl };
+  const widgetTargets = {
+    w1: { el: widgetHostEl },
+  };
+
+  const timeseriesAdapter = registry.requireVisualization("timeseries");
+  const resizeObserver = new ResizeObserver(() => {
+    timeseriesAdapter.resize?.({ el: widgetHostEl });
+  });
+  resizeObserver.observe(widgetHostEl);
+
+  const gridTarget = {
+    el: gridEl,
+  };
   registry.requireGrid("gridstack").init(gridTarget);
+  logEvent("grid adapter initialized");
+
+  await runtime.bindLayoutResize({
+    session,
+    gridId: "gridstack",
+    gridTarget,
+    targetByWidgetId: widgetTargets,
+  });
+  logEvent("bindLayoutResize: grid layout changes now trigger visualization resize");
+
   await runtime.applyDashboardLayout({
     session,
     gridId: "gridstack",
     target: gridTarget,
   });
+  logEvent("applyDashboardLayout: layout synchronized");
+
+  await waitForElementSize(widgetHostEl);
+  logEvent(`chart host size before execute: ${describeElementSize(widgetHostEl)}`);
 
   const result = await runtime.executeWidget({
     session,
     widgetId: "w1",
-    target: { el: widgetHostEl },
+    target: widgetTargets.w1,
     context: { traceId: "trace-browser-demo" },
   });
 
-  // Give the layout a tick, then trigger a resize so ECharts will size to the
-  // fully-initialized container. This fixes charts rendering in the top-left
-  // corner when their container's size is determined after render.
+  timeseriesAdapter.resize?.({ el: widgetHostEl });
+
+  // Give the layout a tick, then trigger a resize so ECharts re-reads
+  // container dimensions after layout settles.
   logState(`Rendered widget w1 with ${result.frames.length} frame(s).`);
-  setTimeout(() => window.dispatchEvent(new Event("resize")), 0);
+  logEvent(
+    `executeWidget: ${result.status} (${result.frames.length} frame(s)) warnings=${result.warnings?.length ?? 0}`,
+  );
+  logEvent(`chart host size after execute: ${describeElementSize(widgetHostEl)}`);
+  setTimeout(() => {
+    window.dispatchEvent(new Event("resize"));
+    timeseriesAdapter.resize?.({ el: widgetHostEl });
+    logEvent(`chart host size after deferred resize: ${describeElementSize(widgetHostEl)}`);
+  }, 32);
 }
 
 main().catch((error) => {
