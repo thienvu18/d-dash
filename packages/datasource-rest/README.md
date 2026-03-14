@@ -19,3 +19,8 @@ registry.registerDatasource(
 The adapter POSTs to `${baseUrl}/query` with a query envelope containing metric, time range, filters, and trace context.
 
 Response envelopes are normalized to d-dash `DataFrame[]` and structured query error results.
+
+## Metric discovery
+
+`getMetrics()` is implemented and performs `GET ${baseUrl}/metrics` by default.
+You can override the path with `metricsPath` in adapter options.

@@ -37,6 +37,11 @@ export type EChartsTarget = {
 export type EChartsAdapterOptions = {
   /** The echarts object (or compatible factory). Injected for testability. */
   echarts: EChartsFactory;
+  /**
+   * Optional sanitizer for html widget content.
+   * If omitted, a conservative built-in sanitizer is used.
+   */
+  sanitizeHtml?: (rawHtml: string) => string;
 };
 
 // ---------------------------------------------------------------------------
@@ -142,6 +147,27 @@ export function widgetOptionsToTextOption(
   };
 }
 
+/**
+ * Resolves and sanitizes html content for `html` widgets.
+ * The sanitized string is intended for host-controlled rendering.
+ */
+export function widgetOptionsToHtmlContent(
+  options: Record<string, unknown> = {},
+  sanitizeHtml: (rawHtml: string) => string = defaultSanitizeHtml,
+): string {
+  const raw = typeof options["html"] === "string" ? options["html"] : "";
+  return sanitizeHtml(raw);
+}
+
+function defaultSanitizeHtml(rawHtml: string): string {
+  // Minimal baseline sanitization. Host apps can provide a stricter sanitizer.
+  return rawHtml
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
+    .replace(/\son\w+\s*=\s*(["']).*?\1/gi, "")
+    .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
+    .replace(/javascript:/gi, "");
+}
+
 // ---------------------------------------------------------------------------
 // Adapter factory
 // ---------------------------------------------------------------------------
@@ -150,6 +176,7 @@ const CAPABILITIES: VisualizationCapabilities = {
   supportsTimeSeries: true,
   supportsStat: true,
   supportsTextWidget: true,
+  supportsHtmlWidget: true,
   supportsResize: true,
 };
 
@@ -174,11 +201,12 @@ export function createEChartsAdapters(
     makeEChartsAdapter("timeseries", adapterOptions),
     makeEChartsAdapter("stat", adapterOptions),
     makeEChartsAdapter("text", adapterOptions),
+    makeEChartsAdapter("html", adapterOptions),
   ];
 }
 
 function makeEChartsAdapter(
-  kind: "timeseries" | "stat" | "text",
+  kind: "timeseries" | "stat" | "text" | "html",
   adapterOptions: EChartsAdapterOptions,
 ): VisualizationAdapter<EChartsTarget> {
   // One ECharts instance per container element, keyed weakly to avoid leaks.
@@ -189,6 +217,10 @@ function makeEChartsAdapter(
     capabilities: CAPABILITIES,
 
     init(target: EChartsTarget): void {
+      if (kind === "html") {
+        return;
+      }
+
       // Idempotent — safe to call multiple times on the same element.
       if (instances.has(target.el)) {
         return;
@@ -198,6 +230,13 @@ function makeEChartsAdapter(
     },
 
     render(request: VisualizationRenderRequest, target: EChartsTarget): void {
+      if (kind === "html") {
+        const opts = (request.options as Record<string, unknown> | undefined) ?? {};
+        const sanitizedHtml = widgetOptionsToHtmlContent(opts, adapterOptions.sanitizeHtml);
+        target.el.innerHTML = sanitizedHtml;
+        return;
+      }
+
       // Auto-init if the host did not call init() explicitly.
       if (!instances.has(target.el)) {
         this.init!(target);
@@ -220,10 +259,18 @@ function makeEChartsAdapter(
     },
 
     resize(target: EChartsTarget): void {
+      if (kind === "html") {
+        return;
+      }
       instances.get(target.el)?.resize();
     },
 
     destroy(target: EChartsTarget): void {
+      if (kind === "html") {
+        target.el.innerHTML = "";
+        return;
+      }
+
       const chart = instances.get(target.el);
       if (chart) {
         chart.dispose();

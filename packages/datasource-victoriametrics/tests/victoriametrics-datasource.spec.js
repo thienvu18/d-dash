@@ -43,6 +43,32 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
     assert.equal(adapter.id, "vm");
   });
 
+  test("adapter declares metadata discovery capability", () => {
+    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL });
+    assert.equal(adapter.capabilities?.supportsMetadataDiscovery, true);
+  });
+
+  test("getMetrics reads metric names from VictoriaMetrics discovery endpoint", async () => {
+    const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: ["up", "cpu_usage"] });
+    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
+
+    const metrics = await adapter.getMetrics();
+
+    assert.equal(getLastRequest().url, `${BASE_URL}/api/v1/label/__name__/values`);
+    assert.equal(metrics.length, 2);
+    assert.equal(metrics[0].id, "up");
+    assert.equal(metrics[0].datasource, "vm");
+  });
+
+  test("getMetrics returns empty array when discovery endpoint errors", async () => {
+    const { fetchFn } = makeFetch({}, { ok: false, status: 500 });
+    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
+
+    const metrics = await adapter.getMetrics();
+
+    assert.deepEqual(metrics, []);
+  });
+
   test("range query uses /api/v1/query_range and includes start/end/step", async () => {
     const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: { resultType: "matrix", result: [] } });
     const adapter = createVictoriaMetricsDatasourceAdapter({

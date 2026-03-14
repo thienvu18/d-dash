@@ -22,3 +22,9 @@ Query mode handling:
 - instant mode (`filters.mode === "instant"`): `/api/v1/query`
 
 Responses are normalized to d-dash frames (`time` + numeric value fields), preserving metric labels as field labels.
+
+## Metric discovery
+
+`getMetrics()` is implemented and queries
+`GET /api/v1/label/__name__/values` by default. Override with `metricsPath`
+when your VictoriaMetrics endpoint is mounted behind a custom route.

@@ -1,45 +1,81 @@
-## Plan: d-dash Contract-First Foundation
+## Plan: Implement Documented Features and Publish Readiness
 
-Build a documentation-first, contract-first foundation for d-dash before coding runtime features. The goal is to ensure the architecture can easily support adapters for gridstack.js, ECharts (including text/html widget types), REST, gRPC, and VictoriaMetrics while keeping extension points open for external contributors.
+Close all documented-but-missing functionality, complete adapter parity with documented core expectations, add JSDoc-driven API documentation generation, add release-grade build/release scripts, and finish open-source packaging so the monorepo is ready for GitHub and npm publication.
 
 **Steps**
-1. Phase 1: Contract Baseline (blocks all implementation)
-Define and approve stable contract boundaries for persisted schema, runtime resolved model, datasource adapter API, visualization adapter API, grid adapter API, registry behavior, and error model. Mark API tiers as stable/experimental/internal.
-2. Phase 1: Commit 1 docs only (parallel-safe with review prep)
-Create `docs/CONTRACTS.md` and `docs/CODE_RULES.md` with versioning policy, compatibility rules, deprecation policy, contract change requirements, and coding rules for strong APIs.
-3. Phase 2: Architecture Spec (depends on 1)
-Create `docs/ARCHITECTURE.md` defining headless core orchestration, adapter boundaries, lifecycle hooks, capability negotiation, and ownership rules (core vs adapter vs host app).
-4. Phase 2: Schema Spec (depends on 1)
-Create `docs/SCHEMA_DESIGN.md` defining persisted dashboard schema and separate runtime-resolved schema, invariants, migration approach, validation rules, and JSON-only persistence constraints.
-5. Phase 2: Integrator and plugin docs (parallel with 3 and 4 once baseline is approved)
-Create `docs/USAGE.md` for app integrators and `docs/PLUGIN_DEVELOPMENT.md` for adapter authors, including conformance expectations for gridstack.js, ECharts, REST, gRPC, and VictoriaMetrics adapters.
-6. Phase 3: Review and freeze docs (depends on 2-5)
-Run final doc consistency review so all terms/types match across files. Freeze v1 contract vocabulary before scaffolding packages.
-7. Phase 4: Implementation preparation (depends on 6)
-Only after docs are approved, scaffold repo/package layout and begin small implementation commits in isolated slices (core contracts, validation, registry, time resolver, runtime flow, adapters).
+1. Phase 0: Baseline and acceptance matrix (blocks all implementation)
+Define docs-to-code acceptance criteria from `plan.md` and `docs/*.md` for html widget support and sanitization policy, grid move/resize event bridge, datasource metadata discovery, capability validation, schema migrations, and gRPC adapter completion.
+
+2. Phase 1: Core contract completion (depends on 1)
+Extend core runtime to enforce documented capabilities consistently, add explicit html sanitization contract boundaries without breaking headless core ownership, and add schema migration framework with migration tests for supported schemaVersion transitions.
+
+3. Phase 2: Adapter parity with documented features (depends on 2)
+- ECharts adapter: implement html visualization variant, declare `supportsHtmlWidget`, and add html safety tests.
+- Gridstack adapter: implement move/resize event bridge callbacks and lifecycle cleanup tests.
+- REST adapter: implement `getMetrics()` discovery path and tests.
+- VictoriaMetrics adapter: implement `getMetrics()` discovery path and tests.
+- gRPC adapter: implement package fully (query mapping, normalization, structured errors, retry hints, capabilities, and tests).
+
+4. Phase 3: Public API docs with JSDoc and TypeDoc (parallel with 2, finalize after 2)
+Add or normalize JSDoc on all exported interfaces, types, and functions in core and first-party adapters. Add TypeDoc config and generation scripts, then wire generated API docs into project documentation.
+
+5. Phase 4: Release-mode build and validation scripts (depends on 2 and 3)
+Replace placeholder root scripts with workspace release scripts: clean build artifacts, build all packages, run tests, run type checks, verify exports, validate package metadata, and run publish dry-run checks.
+
+6. Phase 5: Open-source publication hardening (parallel with 4, finalize after 4)
+Create root OSS files and publishing metadata:
+- `README.md` (opensource-friendly)
+- `LICENSE`
+- `CONTRIBUTING.md`
+- `CODE_OF_CONDUCT.md`
+- `SECURITY.md`
+- `CHANGELOG.md`
+- `docs/README.md` index
+Also standardize package metadata for publishability and align package README quality.
+
+7. Phase 6: Final publish-readiness verification and freeze (depends on 2-5)
+Run full verification matrix (build, tests, docs generation, metadata checks, dry-run publish), validate docs-to-code alignment for target integrations (gridstack.js, ECharts text/html, REST, gRPC, VictoriaMetrics), and produce final release checklist.
 
 **Relevant files**
-- `/Users/thienvu/Library/Application Support/Code/User/workspaceStorage/2946ded0d0d99c7d45d7a5f23c48d70b/GitHub.copilot-chat/memory-tool/memories/YmEyOTk1ZmUtNDc5Ny00MTE1LThhOGItZjNiNmY2OTVjMDEz/plan.md` — source-of-truth plan for this session
-- `docs/CONTRACTS.md` — API stability tiers, versioning, compatibility guarantees
-- `docs/CODE_RULES.md` — coding and contract-change guardrails
-- `docs/ARCHITECTURE.md` — system boundaries and adapter lifecycle
-- `docs/SCHEMA_DESIGN.md` — persisted vs runtime schemas and invariants
-- `docs/USAGE.md` — app integration guide
-- `docs/PLUGIN_DEVELOPMENT.md` — plugin authoring and conformance guide
+- `plan.md`
+- `docs/CONTRACTS.md`
+- `docs/CODE_RULES.md`
+- `docs/ARCHITECTURE.md`
+- `docs/SCHEMA_DESIGN.md`
+- `docs/USAGE.md`
+- `docs/PLUGIN_DEVELOPMENT.md`
+- `package.json`
+- `tsconfig.base.json`
+- `packages/core/src/adapters.ts`
+- `packages/core/src/execution.ts`
+- `packages/core/src/dashboard-runtime.ts`
+- `packages/core/src/validation.ts`
+- `packages/core/src/schema.ts`
+- `packages/adapter-echarts/src/index.ts`
+- `packages/adapter-gridstack/src/index.ts`
+- `packages/datasource-rest/src/index.ts`
+- `packages/datasource-victoriametrics/src/index.ts`
+- `packages/datasource-grpc/README.md` (to be replaced with implemented package docs)
+- `packages/core/tests/*.spec.js`
+- `packages/adapter-echarts/tests/echarts-adapter.spec.js`
+- `packages/adapter-gridstack/tests/gridstack-adapter.spec.js`
+- `packages/datasource-rest/tests/rest-datasource.spec.js`
+- `packages/datasource-victoriametrics/tests/victoriametrics-datasource.spec.js`
 
 **Verification**
-1. Contract integrity check: every stable contract in `docs/CONTRACTS.md` appears consistently in `docs/ARCHITECTURE.md` and `docs/SCHEMA_DESIGN.md`.
-2. Adapter feasibility check: each target integration (gridstack.js, ECharts text/html, REST, gRPC, VictoriaMetrics) has explicit mapping and lifecycle requirements documented.
-3. Governance check: breaking-change and migration policy is documented before any runtime implementation commit.
-4. Documentation usability check: examples in `docs/USAGE.md` and `docs/PLUGIN_DEVELOPMENT.md` are coherent and implementable.
+1. Contract-completion check: every documented feature is implemented or explicitly marked experimental, with matching tests.
+2. Adapter parity check: first-party adapters satisfy documented lifecycle, capability, and structured-error expectations.
+3. Build/release check: release scripts pass for build, test, type-check, export validation, metadata validation, and publish dry-run.
+4. API docs check: TypeDoc output includes all public exported interfaces/types/functions.
+5. OSS readiness check: root docs/governance files exist and are linked consistently.
 
 **Decisions**
-- Do not edit `idea.md` in this phase.
-- Keep commits small and approval-gated after each commit.
-- Prioritize adapter-friendly contracts and architecture clarity over implementation speed.
-- Keep architecture open for third-party ecosystem while validating first-party target integrations.
+- Implement gRPC now; do not defer for release readiness.
+- Use TypeDoc generated from JSDoc comments for public API docs.
+- Preserve headless core boundaries; keep library-specific behavior in adapters/host.
+- Keep changes small and review-gated per commit.
 
 **Further Considerations**
-1. Capability model recommendation: define explicit adapter capabilities (for example streaming support, html widget support, resize handling) to prevent runtime surprises.
-2. Security recommendation: define html-widget sanitization policy in architecture and plugin docs before implementation.
-3. Agent continuity requirement: after any context compaction, read `/Users/thienvu/Library/Application Support/Code/User/workspaceStorage/2946ded0d0d99c7d45d7a5f23c48d70b/GitHub.copilot-chat/memory-tool/memories/YmEyOTk1ZmUtNDc5Ny00MTE1LThhOGItZjNiNmY2OTVjMDEz/plan.md` (if missing read `plan.md` in workspace) first, then read all docs before action.
+1. Versioning workflow: adopt changesets now or keep manual changelog for first release and migrate later.
+2. API docs publishing: commit generated docs or publish from CI to GitHub Pages.
+3. Package publish scope: publish all packages together only after gRPC and parity checks are complete.

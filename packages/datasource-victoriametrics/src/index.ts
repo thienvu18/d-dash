@@ -7,6 +7,8 @@ import type {
   DatasourceQueryResult,
   RuntimeContext,
   DDashErrorCode,
+  MetricDefinition,
+  VisualizationKind,
 } from "@d-dash/core";
 
 export type FetchFn = (url: string, init?: FetchRequestInit) => Promise<FetchResponse>;
@@ -32,6 +34,8 @@ export type VictoriaMetricsDatasourceAdapterOptions = {
   timeoutMs?: number;
   /** Default `step` for range queries when caller does not provide one via filters.step. */
   defaultStep?: string;
+  /** Metric discovery path. Defaults to `/api/v1/label/__name__/values`. */
+  metricsPath?: string;
   fetch?: FetchFn;
 };
 
@@ -57,7 +61,10 @@ type VmSuccessEnvelope = {
 
 const CAPABILITIES: DatasourceCapabilities = {
   supportsAdHocFilters: true,
+  supportsMetadataDiscovery: true,
 };
+
+const DEFAULT_VISUALIZATIONS: VisualizationKind[] = ["timeseries", "stat", "table", "text", "html"];
 
 function toNumber(value: number | string): number {
   return typeof value === "number" ? value : Number(value);
@@ -149,6 +156,28 @@ function buildFramesFromVmEnvelope(envelope: VmSuccessEnvelope): DataFrame[] {
   return results.map((entry) => normalizeRangeResult(entry as VmRangeResult));
 }
 
+type VmMetricDiscoveryEnvelope = {
+  status?: string;
+  data?: string[];
+};
+
+function normalizeVmMetricDiscoveryResponse(raw: unknown, datasourceId: string): MetricDefinition[] {
+  const envelope = raw as VmMetricDiscoveryEnvelope;
+  if (!Array.isArray(envelope.data)) {
+    return [];
+  }
+
+  return envelope.data
+    .filter((name) => typeof name === "string" && name.trim().length > 0)
+    .map((name) => ({
+      id: name,
+      name,
+      unit: "",
+      datasource: datasourceId,
+      supportedVisualizations: DEFAULT_VISUALIZATIONS,
+    }));
+}
+
 export function createVictoriaMetricsDatasourceAdapter(
   options: VictoriaMetricsDatasourceAdapterOptions,
 ): DatasourceAdapter {
@@ -159,6 +188,30 @@ export function createVictoriaMetricsDatasourceAdapter(
   return {
     id: options.id,
     capabilities: CAPABILITIES,
+
+    async getMetrics(): Promise<MetricDefinition[]> {
+      const path = options.metricsPath ?? "/api/v1/label/__name__/values";
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+      try {
+        const response = await fetchImpl(`${options.baseUrl}${normalizedPath}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...options.headers,
+          },
+        });
+
+        if (!response.ok) {
+          return [];
+        }
+
+        const raw = await response.json();
+        return normalizeVmMetricDiscoveryResponse(raw, options.id);
+      } catch {
+        return [];
+      }
+    },
 
     async query(request: DatasourceQueryRequest, context: RuntimeContext): Promise<DatasourceQueryResult> {
       const filters = (request.filters as Record<string, unknown> | undefined) ?? undefined;

@@ -62,6 +62,48 @@ describe("createRestDatasourceAdapter", () => {
     assert.equal(adapter.capabilities?.supportsAdHocFilters, true);
   });
 
+  test("adapter declares metadata discovery capability", () => {
+    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL });
+    assert.equal(adapter.capabilities?.supportsMetadataDiscovery, true);
+  });
+
+  test("getMetrics maps string metric list response", async () => {
+    const { fetchFn, getLastRequest } = makeFetch(["cpu.usage", "mem.usage"]);
+    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+
+    const metrics = await adapter.getMetrics();
+
+    assert.equal(getLastRequest().url, `${BASE_URL}/metrics`);
+    assert.equal(metrics.length, 2);
+    assert.equal(metrics[0].id, "cpu.usage");
+    assert.equal(metrics[0].datasource, "metrics");
+  });
+
+  test("getMetrics maps object metric list response", async () => {
+    const { fetchFn } = makeFetch({
+      metrics: [
+        { id: "cpu.usage", name: "CPU Usage", unit: "percent", supportedVisualizations: ["timeseries"] },
+      ],
+    });
+    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+
+    const metrics = await adapter.getMetrics();
+
+    assert.equal(metrics.length, 1);
+    assert.equal(metrics[0].name, "CPU Usage");
+    assert.equal(metrics[0].unit, "percent");
+    assert.deepEqual(metrics[0].supportedVisualizations, ["timeseries"]);
+  });
+
+  test("getMetrics returns empty array on HTTP errors", async () => {
+    const { fetchFn } = makeFetch({}, { ok: false, status: 500 });
+    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+
+    const metrics = await adapter.getMetrics();
+
+    assert.deepEqual(metrics, []);
+  });
+
   // ---------------------------------------------------------------------------
   // Request construction
   // ---------------------------------------------------------------------------

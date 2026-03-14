@@ -5,14 +5,29 @@ import { createGridstackAdapter } from "../dist/index.js";
 
 /** Builds a mock GridStack factory and records all calls. */
 function makeGridStackFactory() {
-  const calls = { init: [], update: [], destroy: [] };
+  const calls = { init: [], update: [], destroy: [], on: [], off: [] };
+  const listeners = new WeakMap();
 
   const factory = {
     init(options, el) {
       calls.init.push({ options, el });
+      const listenerMap = new Map();
+      listeners.set(el, listenerMap);
+
       return {
         update(el, opts) {
           calls.update.push({ el, opts });
+        },
+        on(event, callback) {
+          calls.on.push({ event });
+          listenerMap.set(event, callback);
+        },
+        off(event, callback) {
+          calls.off.push({ event });
+          const current = listenerMap.get(event);
+          if (current === callback) {
+            listenerMap.delete(event);
+          }
         },
         destroy(removeDOM) {
           calls.destroy.push({ removeDOM });
@@ -21,7 +36,15 @@ function makeGridStackFactory() {
     },
   };
 
-  return { factory, calls };
+  function emitChange(el, items) {
+    const listenerMap = listeners.get(el);
+    const callback = listenerMap?.get("change");
+    if (callback) {
+      callback({}, items);
+    }
+  }
+
+  return { factory, calls, emitChange };
 }
 
 /**
@@ -134,6 +157,34 @@ describe("createGridstackAdapter", () => {
 
     assert.equal(calls.destroy.length, 1);
     assert.equal(calls.destroy[0].removeDOM, false);
+  });
+
+  test("init wires change events to target.onLayoutChange callback", () => {
+    const { factory, emitChange } = makeGridStackFactory();
+    const adapter = createGridstackAdapter({ GridStack: factory });
+    const received = [];
+    const target = makeTarget();
+    target.onLayoutChange = (changes) => received.push(...changes);
+
+    adapter.init(target);
+    emitChange(target.el, [{ id: "w1", x: 1, y: 2, w: 3, h: 4 }]);
+
+    assert.equal(received.length, 1);
+    assert.deepEqual(received[0], { widgetId: "w1", x: 1, y: 2, w: 3, h: 4 });
+  });
+
+  test("destroy unregisters change event listener", () => {
+    const { factory, calls } = makeGridStackFactory();
+    const adapter = createGridstackAdapter({ GridStack: factory });
+    const target = makeTarget();
+    target.onLayoutChange = () => {};
+
+    adapter.init(target);
+    adapter.destroy(target);
+
+    assert.equal(calls.on.length, 1);
+    assert.equal(calls.off.length, 1);
+    assert.equal(calls.off[0].event, "change");
   });
 
   test("destroy on uninitialized target is a no-op", () => {

@@ -5,6 +5,8 @@ import type {
   DatasourceQueryResult,
   DataFrame,
   DataField,
+  MetricDefinition,
+  VisualizationKind,
 } from "@d-dash/core";
 import type { RuntimeContext } from "@d-dash/core";
 
@@ -101,6 +103,11 @@ export type RestDatasourceAdapterOptions = {
    * Defaults to the global `fetch` when not provided.
    */
   fetch?: FetchFn;
+
+  /**
+   * Optional path used for metric discovery. Defaults to `${baseUrl}/metrics`.
+   */
+  metricsPath?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -126,7 +133,66 @@ function normalizeFrames(rawFrames: RestFrame[]): DataFrame[] {
 
 const CAPABILITIES: DatasourceCapabilities = {
   supportsAdHocFilters: true,
+  supportsMetadataDiscovery: true,
 };
+
+const DEFAULT_VISUALIZATIONS: VisualizationKind[] = ["timeseries", "stat", "table", "text", "html"];
+
+type RestMetricWire =
+  | string
+  | {
+      id?: string;
+      name?: string;
+      unit?: string;
+      supportedVisualizations?: VisualizationKind[];
+    };
+
+type RestMetricsResponse =
+  | RestMetricWire[]
+  | {
+      metrics?: RestMetricWire[];
+    };
+
+function toMetricDefinition(metric: RestMetricWire, datasourceId: string): MetricDefinition {
+  if (typeof metric === "string") {
+    return {
+      id: metric,
+      name: metric,
+      unit: "",
+      datasource: datasourceId,
+      supportedVisualizations: DEFAULT_VISUALIZATIONS,
+    };
+  }
+
+  const id = metric.id ?? metric.name ?? "";
+  return {
+    id,
+    name: metric.name ?? id,
+    unit: metric.unit ?? "",
+    datasource: datasourceId,
+    supportedVisualizations: metric.supportedVisualizations ?? DEFAULT_VISUALIZATIONS,
+  };
+}
+
+function normalizeMetricsResponse(raw: unknown, datasourceId: string): MetricDefinition[] {
+  const response = raw as RestMetricsResponse;
+  const source = Array.isArray(response)
+    ? response
+    : Array.isArray(response.metrics)
+      ? response.metrics
+      : [];
+
+  const metrics: MetricDefinition[] = [];
+  for (const entry of source) {
+    const metric = toMetricDefinition(entry, datasourceId);
+    if (metric.id.trim().length === 0) {
+      continue;
+    }
+    metrics.push(metric);
+  }
+
+  return metrics;
+}
 
 /**
  * Creates a d-dash DatasourceAdapter that queries a JSON REST endpoint.
@@ -156,6 +222,30 @@ export function createRestDatasourceAdapter(
   return {
     id: options.id,
     capabilities: CAPABILITIES,
+
+    async getMetrics(): Promise<MetricDefinition[]> {
+      const path = options.metricsPath ?? "/metrics";
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+      try {
+        const response = await resolveFetch(`${options.baseUrl}${normalizedPath}`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...options.headers,
+          },
+        });
+
+        if (!response.ok) {
+          return [];
+        }
+
+        const raw = await response.json();
+        return normalizeMetricsResponse(raw, options.id);
+      } catch {
+        return [];
+      }
+    },
 
     async query(
       request: DatasourceQueryRequest,

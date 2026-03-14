@@ -6,6 +6,7 @@ import {
   dataFramesToTimeseriesOption,
   dataFramesToStatOption,
   widgetOptionsToTextOption,
+  widgetOptionsToHtmlContent,
 } from "../dist/index.js";
 
 /** Builds a mock ECharts factory and records all calls. */
@@ -45,18 +46,18 @@ function makeContext() {
 // ---------------------------------------------------------------------------
 
 describe("createEChartsAdapters", () => {
-  test("returns three adapters for timeseries, stat, and text", () => {
+  test("returns four adapters for timeseries, stat, text, and html", () => {
     const { factory } = makeEChartsFactory();
     const adapters = createEChartsAdapters({ echarts: factory });
 
-    assert.equal(adapters.length, 3);
+    assert.equal(adapters.length, 4);
     assert.deepEqual(
       adapters.map((a) => a.type),
-      ["timeseries", "stat", "text"],
+      ["timeseries", "stat", "text", "html"],
     );
   });
 
-  test("each adapter declares timeseries, stat, text, and resize capabilities", () => {
+  test("each adapter declares timeseries, stat, text, html, and resize capabilities", () => {
     const { factory } = makeEChartsFactory();
     const adapters = createEChartsAdapters({ echarts: factory });
 
@@ -64,6 +65,7 @@ describe("createEChartsAdapters", () => {
       assert.equal(adapter.capabilities?.supportsTimeSeries, true, `${adapter.type} supportsTimeSeries`);
       assert.equal(adapter.capabilities?.supportsStat, true, `${adapter.type} supportsStat`);
       assert.equal(adapter.capabilities?.supportsTextWidget, true, `${adapter.type} supportsTextWidget`);
+      assert.equal(adapter.capabilities?.supportsHtmlWidget, true, `${adapter.type} supportsHtmlWidget`);
       assert.equal(adapter.capabilities?.supportsResize, true, `${adapter.type} supportsResize`);
     }
   });
@@ -262,6 +264,31 @@ describe("widgetOptionsToTextOption", () => {
 });
 
 // ---------------------------------------------------------------------------
+// widgetOptionsToHtmlContent
+// ---------------------------------------------------------------------------
+
+describe("widgetOptionsToHtmlContent", () => {
+  test("returns sanitized html from options.html", () => {
+    const html = widgetOptionsToHtmlContent({
+      html: '<div onclick="evil()">safe</div><script>alert(1)</script>',
+    });
+
+    assert.equal(html.includes("<script"), false);
+    assert.equal(html.includes("onclick"), false);
+    assert.equal(html.includes("safe"), true);
+  });
+
+  test("uses custom sanitizer when provided", () => {
+    const html = widgetOptionsToHtmlContent(
+      { html: "<b>hello</b>" },
+      () => "SANITIZED",
+    );
+
+    assert.equal(html, "SANITIZED");
+  });
+});
+
+// ---------------------------------------------------------------------------
 // render integration — timeseries, stat, text
 // ---------------------------------------------------------------------------
 
@@ -331,5 +358,50 @@ describe("render integration", () => {
 
     assert.equal(calls.setOption[0].option.title.text, "System Status");
     assert.deepEqual(calls.setOption[0].option.series, []);
+  });
+
+  test("html render sanitizes and writes content into target element", () => {
+    const { factory } = makeEChartsFactory();
+    const adapters = createEChartsAdapters({ echarts: factory });
+    const html = adapters.find((a) => a.type === "html");
+    const target = makeTarget();
+    target.el = { innerHTML: "" };
+
+    html.render(
+      {
+        kind: "html",
+        frames: [],
+        options: { html: '<p onclick="evil()">ok</p><script>alert(1)</script>' },
+        context: makeContext(),
+      },
+      target,
+    );
+
+    assert.equal(target.el.innerHTML.includes("<script"), false);
+    assert.equal(target.el.innerHTML.includes("onclick"), false);
+    assert.equal(target.el.innerHTML.includes("ok"), true);
+  });
+
+  test("html render uses custom sanitizer when provided", () => {
+    const { factory } = makeEChartsFactory();
+    const adapters = createEChartsAdapters({
+      echarts: factory,
+      sanitizeHtml: () => "CUSTOM",
+    });
+    const html = adapters.find((a) => a.type === "html");
+    const target = makeTarget();
+    target.el = { innerHTML: "" };
+
+    html.render(
+      {
+        kind: "html",
+        frames: [],
+        options: { html: "<div>ignored</div>" },
+        context: makeContext(),
+      },
+      target,
+    );
+
+    assert.equal(target.el.innerHTML, "CUSTOM");
   });
 });
