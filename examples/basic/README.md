@@ -22,6 +22,13 @@ The browser demo explicitly demonstrates the full runtime workflow:
 - execute widget
 - observe runtime and layout events
 
+Browser layout now includes multiple widget types and sizes:
+
+- `w1` timeseries (large)
+- `w2` stat (small)
+- `w3` text (small)
+- `w4` html (wide, short)
+
 It also uses `runtime.bindLayoutResize(...)` to bridge grid layout changes to
 visualization adapter `resize(...)` calls through core contracts.
 

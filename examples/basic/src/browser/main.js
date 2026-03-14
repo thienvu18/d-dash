@@ -11,8 +11,14 @@ import { createRestDatasourceAdapter } from "../../../../packages/datasource-res
 
 const appStateEl = document.getElementById("app-state");
 const gridEl = document.getElementById("grid-root");
-const widgetHostEl = document.getElementById("widget-chart");
 const eventLogEl = document.getElementById("event-log");
+
+const WIDGET_HOST_IDS = {
+  w1: "widget-timeseries",
+  w2: "widget-stat",
+  w3: "widget-text",
+  w4: "widget-html",
+};
 
 function logState(message) {
   if (appStateEl) {
@@ -40,7 +46,7 @@ function describeElementSize(el) {
 
 async function waitForElementSize(
   el,
-  { minWidth = 240, minHeight = 120, timeoutMs = 1200 } = {},
+  { minWidth = 180, minHeight = 90, timeoutMs = 1200 } = {},
 ) {
   const startedAt = performance.now();
 
@@ -60,7 +66,12 @@ function makeDashboard() {
     dashboardId: "browser-basic",
     meta: { title: "Browser Demo" },
     timeRange: { type: "relative", value: "now-1h" },
-    layout: [{ id: "l1", x: 0, y: 0, w: 12, h: 6 }],
+    layout: [
+      { id: "l1", x: 0, y: 0, w: 8, h: 6 },
+      { id: "l2", x: 8, y: 0, w: 4, h: 3 },
+      { id: "l3", x: 8, y: 3, w: 4, h: 3 },
+      { id: "l4", x: 0, y: 6, w: 12, h: 3 },
+    ],
     widgets: [
       {
         id: "w1",
@@ -74,26 +85,77 @@ function makeDashboard() {
           yAxis: { name: "%" },
         },
       },
+      {
+        id: "w2",
+        layoutId: "l2",
+        datasource: "rest-metrics",
+        query: { metric: "mem.usage" },
+        visualization: { type: "stat" },
+        timeRange: { type: "inherit" },
+        options: {
+          gaugeOverrides: {
+            min: 0,
+            max: 100,
+            axisLine: {
+              lineStyle: {
+                width: 10,
+              },
+            },
+          },
+        },
+      },
+      {
+        id: "w3",
+        layoutId: "l3",
+        datasource: "rest-metrics",
+        query: { metric: "build.version" },
+        visualization: { type: "text" },
+        timeRange: { type: "inherit" },
+        options: {
+          text: "Cluster healthy",
+          subtext: "No incidents in last 24h",
+        },
+      },
+      {
+        id: "w4",
+        layoutId: "l4",
+        datasource: "rest-metrics",
+        query: { metric: "release.notes" },
+        visualization: { type: "html" },
+        timeRange: { type: "inherit" },
+        options: {
+          html: "<div style='font-family: Avenir Next, sans-serif; color: #dce9ff; line-height: 1.45;'><strong>Deployment:</strong> edge-us-2<br/><strong>Version:</strong> 1.14.8<br/><strong>Status:</strong> <span style='color:#7be495'>Healthy</span></div>",
+        },
+      },
     ],
   };
+}
+
+function buildMetricSeries(metric, index) {
+  if (metric === "mem.usage") {
+    return 55 + Math.cos(index / 3) * 18 + Math.random() * 3;
+  }
+
+  return 35 + Math.sin(index / 2) * 20 + Math.random() * 4;
 }
 
 function createDemoFetch() {
   return async (_url, init) => {
     const payload = JSON.parse(init?.body ?? "{}");
+    const metric = String(payload.metric ?? "cpu.usage");
     const from = Number(payload.from ?? Date.now() - 3_600_000);
     const to = Number(payload.to ?? Date.now());
 
     const points = 20;
     const step = Math.max(1, Math.floor((to - from) / points));
     const timeValues = [];
-    const cpuValues = [];
+    const metricValues = [];
 
     for (let i = 0; i <= points; i += 1) {
       const t = from + i * step;
-      const value = 35 + Math.sin(i / 2) * 20 + Math.random() * 4;
+      const value = buildMetricSeries(metric, i);
       timeValues.push(t);
-      cpuValues.push(Math.round(value * 10) / 10);
+      metricValues.push(Math.round(value * 10) / 10);
     }
 
     return {
@@ -108,9 +170,9 @@ function createDemoFetch() {
               fields: [
                 { name: "time", type: "time", values: timeValues },
                 {
-                  name: "cpu.usage",
+                  name: metric,
                   type: "number",
-                  values: cpuValues,
+                  values: metricValues,
                   labels: { host: "srv-1" },
                 },
               ],
@@ -122,21 +184,27 @@ function createDemoFetch() {
   };
 }
 
-async function main() {
-  if (!gridEl || !widgetHostEl) {
-    throw new Error("Missing required DOM elements for browser demo.");
+function collectWidgetTargets() {
+  const targets = {};
+
+  for (const [widgetId, hostId] of Object.entries(WIDGET_HOST_IDS)) {
+    const el = document.getElementById(hostId);
+    if (!el) {
+      throw new Error(`Missing widget host element: ${hostId}`);
+    }
+    targets[widgetId] = { el };
   }
 
-  logEvent("Bootstrapping registry and adapters");
+  return targets;
+}
 
+function registerAdapters() {
   const registry = createAdapterRegistry();
 
   registry.registerGrid(createGridstackAdapter({ GridStack }));
-
   for (const adapter of createEChartsAdapters({ echarts })) {
     registry.registerVisualization(adapter);
   }
-
   registry.registerDatasource(
     createRestDatasourceAdapter({
       id: "rest-metrics",
@@ -144,6 +212,43 @@ async function main() {
       fetch: createDemoFetch(),
     }),
   );
+
+  return registry;
+}
+
+function setupWidgetResizeObservers(registry, session, widgetTargets) {
+  const observers = [];
+
+  for (const widget of session.widgets) {
+    const target = widgetTargets[widget.id];
+    const adapter = registry.requireVisualization(widget.visualization.type);
+    if (!target || !adapter.resize) {
+      continue;
+    }
+
+    const observer = new ResizeObserver(() => {
+      adapter.resize?.(target);
+    });
+    observer.observe(target.el);
+    observers.push(observer);
+  }
+
+  return () => {
+    for (const observer of observers) {
+      observer.disconnect();
+    }
+  };
+}
+
+async function main() {
+  if (!gridEl) {
+    throw new Error("Missing required DOM elements for browser demo.");
+  }
+
+  const widgetTargets = collectWidgetTargets();
+
+  logEvent("Bootstrapping registry and adapters");
+  const registry = registerAdapters();
 
   logEvent("Registered grid, visualization, and datasource adapters");
 
@@ -187,13 +292,6 @@ async function main() {
 
   const session = runtime.createSession(dashboard);
   logEvent("createSession: completed");
-  const widgetTarget = { el: widgetHostEl };
-
-  const timeseriesAdapter = registry.requireVisualization("timeseries");
-  const resizeObserver = new ResizeObserver(() => {
-    timeseriesAdapter.resize?.({ el: widgetHostEl });
-  });
-  resizeObserver.observe(widgetHostEl);
 
   const gridTarget = {
     el: gridEl,
@@ -201,15 +299,28 @@ async function main() {
   registry.requireGrid("gridstack").init(gridTarget);
   logEvent("grid adapter initialized");
 
-  await runtime.bindLayoutResize({
+  const disconnectResizeObservers = setupWidgetResizeObservers(
+    registry,
+    session,
+    widgetTargets,
+  );
+
+  const unbindLayoutResize = await runtime.bindLayoutResize({
     session,
     gridId: "gridstack",
     gridTarget,
     resolveTargetByWidgetId(widgetId) {
-      return widgetId === "w1" ? widgetTarget : undefined;
+      return widgetTargets[widgetId];
     },
   });
   logEvent("bindLayoutResize: grid layout changes now trigger visualization resize");
+
+  const cleanup = () => {
+    unbindLayoutResize();
+    disconnectResizeObservers();
+    logEvent("teardown: unbound layout resize and disconnected ResizeObservers");
+  };
+  window.addEventListener("beforeunload", cleanup, { once: true });
 
   await runtime.applyDashboardLayout({
     session,
@@ -218,29 +329,33 @@ async function main() {
   });
   logEvent("applyDashboardLayout: layout synchronized");
 
-  await waitForElementSize(widgetHostEl);
-  logEvent(`chart host size before execute: ${describeElementSize(widgetHostEl)}`);
+  await Promise.all(
+    Object.entries(widgetTargets).map(async ([widgetId, target]) => {
+      await waitForElementSize(target.el);
+      logEvent(`widget ${widgetId} size before execute: ${describeElementSize(target.el)}`);
+    }),
+  );
 
-  const result = await runtime.executeWidget({
+  const results = await runtime.executeAllWidgets({
     session,
-    widgetId: "w1",
-    target: widgetTarget,
+    targetByWidgetId: widgetTargets,
     context: { traceId: "trace-browser-demo" },
   });
 
-  timeseriesAdapter.resize?.({ el: widgetHostEl });
-
   // Give the layout a tick, then trigger a resize so ECharts re-reads
   // container dimensions after layout settles.
-  logState(`Rendered widget w1 with ${result.frames.length} frame(s).`);
-  logEvent(
-    `executeWidget: ${result.status} (${result.frames.length} frame(s)) warnings=${result.warnings?.length ?? 0}`,
-  );
-  logEvent(`chart host size after execute: ${describeElementSize(widgetHostEl)}`);
+  logState(`Rendered ${results.length} widgets.`);
+  for (const { widgetId, result } of results) {
+    logEvent(
+      `executeWidget: ${widgetId} => ${result.status} (${result.frames.length} frame(s)) warnings=${result.warnings?.length ?? 0}`,
+    );
+  }
+
   setTimeout(() => {
     window.dispatchEvent(new Event("resize"));
-    timeseriesAdapter.resize?.({ el: widgetHostEl });
-    logEvent(`chart host size after deferred resize: ${describeElementSize(widgetHostEl)}`);
+    for (const [widgetId, target] of Object.entries(widgetTargets)) {
+      logEvent(`widget ${widgetId} size after deferred resize: ${describeElementSize(target.el)}`);
+    }
   }, 32);
 }
 
