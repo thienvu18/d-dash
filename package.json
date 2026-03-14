@@ -29,7 +29,7 @@
     "verify:exports": "node scripts/verify-exports.mjs",
     "release:check:metadata": "node scripts/validate-package-metadata.mjs",
     "release:check:versions": "node scripts/validate-version-consistency.mjs",
-    "release:prepare": "npm run build:release && npm run test && npm run docs:api && npm run release:check:metadata && npm run release:check:versions",
+    "release:prepare": "npm run lint && npm run build:release && npm run test && npm run docs:api && npm run release:check:metadata && npm run release:check:versions",
     "release:dry-run": "npm run release:prepare && node scripts/publish-packages.mjs dry-run",
     "release:publish": "npm run release:prepare && node scripts/publish-packages.mjs publish"
   },

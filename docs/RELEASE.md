@@ -19,6 +19,7 @@ npm run release:prepare
 
 This verifies:
 
+- lint checks
 - clean build for all packages
 - test suites across core and adapters
 - TypeDoc API docs generation
