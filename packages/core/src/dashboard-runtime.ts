@@ -1,8 +1,6 @@
 import type { DatasourceQueryResult, GridLayoutChange } from "./adapters";
 import type { DDashError } from "./errors";
-import {
-  executeWidget as executeWidgetOperation,
-} from "./execution.js";
+import { executeWidget as executeWidgetOperation } from "./execution.js";
 import type { JsonObject } from "./json";
 import type { AdapterRegistry } from "./registry";
 import {
@@ -10,7 +8,11 @@ import {
   type ResolvedTimeRange,
   type RuntimeContext,
 } from "./runtime.js";
-import type { MetricDefinition, PersistedDashboard, PersistedWidget } from "./schema";
+import type {
+  MetricDefinition,
+  PersistedDashboard,
+  PersistedWidget,
+} from "./schema";
 import {
   toSchemaValidationError,
   validatePersistedDashboard,
@@ -90,33 +92,53 @@ export type ApplyDashboardLayoutInput<TTarget = unknown> = {
 
 /** Structured runtime error union thrown by dashboard runtime APIs. */
 export type DashboardRuntimeError = DDashError & {
-  code: "SCHEMA_INVALID" | "RUNTIME_WIDGET_NOT_FOUND" | "RUNTIME_TARGET_MISSING";
+  code:
+    | "SCHEMA_INVALID"
+    | "RUNTIME_WIDGET_NOT_FOUND"
+    | "RUNTIME_TARGET_MISSING";
 };
 
 /** Public dashboard runtime API surface. */
 export type DashboardRuntime = {
   validateDashboard(
     dashboard: PersistedDashboard,
-    options?: Omit<DashboardValidationOptions, "knownDatasources" | "knownVisualizations">,
+    options?: Omit<
+      DashboardValidationOptions,
+      "knownDatasources" | "knownVisualizations"
+    >,
   ): ValidationResult;
   validateDashboardWithRegistryMetrics(
     dashboard: PersistedDashboard,
-    options?: Omit<DashboardValidationOptions, "knownDatasources" | "knownVisualizations" | "knownMetrics">,
+    options?: Omit<
+      DashboardValidationOptions,
+      "knownDatasources" | "knownVisualizations" | "knownMetrics"
+    >,
   ): Promise<ValidationResult>;
   preflightDashboard(dashboard: PersistedDashboard): DashboardPreflightResult;
-  applyDashboardLayout<TTarget = unknown>(input: ApplyDashboardLayoutInput<TTarget>): Promise<void>;
+  applyDashboardLayout<TTarget = unknown>(
+    input: ApplyDashboardLayoutInput<TTarget>,
+  ): Promise<void>;
   createSession(dashboard: PersistedDashboard): DashboardSession;
   createSessionWithRegistryMetrics(
     dashboard: PersistedDashboard,
-    options?: Omit<DashboardValidationOptions, "knownDatasources" | "knownVisualizations" | "knownMetrics">,
+    options?: Omit<
+      DashboardValidationOptions,
+      "knownDatasources" | "knownVisualizations" | "knownMetrics"
+    >,
   ): Promise<DashboardSession>;
-  executeWidget<TTarget = unknown>(input: ExecuteSessionWidgetInput<TTarget>): Promise<DatasourceQueryResult>;
-  executeAllWidgets<TTarget = unknown>(input: ExecuteAllWidgetsInput<TTarget>): Promise<ExecuteWidgetResult[]>;
+  executeWidget<TTarget = unknown>(
+    input: ExecuteSessionWidgetInput<TTarget>,
+  ): Promise<DatasourceQueryResult>;
+  executeAllWidgets<TTarget = unknown>(
+    input: ExecuteAllWidgetsInput<TTarget>,
+  ): Promise<ExecuteWidgetResult[]>;
   discoverMetrics(datasourceId?: string): Promise<MetricDefinition[]>;
 };
 
 /** Creates dashboard runtime orchestrator bound to adapter registry and clock/event hooks. */
-export function createDashboardRuntime(options: DashboardRuntimeOptions): DashboardRuntime {
+export function createDashboardRuntime(
+  options: DashboardRuntimeOptions,
+): DashboardRuntime {
   const getNow = options.now ?? Date.now;
 
   return {
@@ -151,9 +173,15 @@ export function createDashboardRuntime(options: DashboardRuntimeOptions): Dashbo
       });
     },
 
-    preflightDashboard(dashboard: PersistedDashboard): DashboardPreflightResult {
-      const registeredDatasources = new Set(options.registry.listDatasourceIds());
-      const registeredVisualizations = new Set(options.registry.listVisualizationKinds());
+    preflightDashboard(
+      dashboard: PersistedDashboard,
+    ): DashboardPreflightResult {
+      const registeredDatasources = new Set(
+        options.registry.listDatasourceIds(),
+      );
+      const registeredVisualizations = new Set(
+        options.registry.listVisualizationKinds(),
+      );
 
       const missingDatasourceSet = new Set<string>();
       const missingVisualizationSet = new Set<string>();
@@ -172,7 +200,8 @@ export function createDashboardRuntime(options: DashboardRuntimeOptions): Dashbo
       const missingVisualizations = Array.from(missingVisualizationSet);
 
       return {
-        ok: missingDatasources.length === 0 && missingVisualizations.length === 0,
+        ok:
+          missingDatasources.length === 0 && missingVisualizations.length === 0,
         missingDatasources,
         missingVisualizations,
       };
@@ -220,14 +249,19 @@ export function createDashboardRuntime(options: DashboardRuntimeOptions): Dashbo
         "knownDatasources" | "knownVisualizations" | "knownMetrics"
       > = {},
     ): Promise<DashboardSession> {
-      const validation = await this.validateDashboardWithRegistryMetrics(dashboard, userOptions);
+      const validation = await this.validateDashboardWithRegistryMetrics(
+        dashboard,
+        userOptions,
+      );
       return buildSessionFromValidatedDashboard(validation, dashboard, getNow);
     },
 
     async executeWidget<TTarget = unknown>(
       input: ExecuteSessionWidgetInput<TTarget>,
     ): Promise<DatasourceQueryResult> {
-      const widget = input.session.widgets.find((candidate) => candidate.id === input.widgetId);
+      const widget = input.session.widgets.find(
+        (candidate) => candidate.id === input.widgetId,
+      );
       if (!widget) {
         throw new DashboardRuntimeException(
           "RUNTIME_WIDGET_NOT_FOUND",
@@ -353,10 +387,14 @@ function buildSessionFromValidatedDashboard(
   }
 
   if (dashboard.timeRange.type === "inherit") {
-    throw new DashboardRuntimeException("SCHEMA_INVALID", "Dashboard timeRange cannot use inherit.", {
-      path: "timeRange",
-      type: "inherit",
-    });
+    throw new DashboardRuntimeException(
+      "SCHEMA_INVALID",
+      "Dashboard timeRange cannot use inherit.",
+      {
+        path: "timeRange",
+        type: "inherit",
+      },
+    );
   }
 
   return {
@@ -373,7 +411,11 @@ class DashboardRuntimeException extends Error implements DashboardRuntimeError {
   readonly details?: JsonObject;
   readonly retriable = false;
 
-  constructor(code: DashboardRuntimeError["code"], message: string, details?: JsonObject) {
+  constructor(
+    code: DashboardRuntimeError["code"],
+    message: string,
+    details?: JsonObject,
+  ) {
     super(message);
     this.name = "DashboardRuntimeException";
     this.code = code;

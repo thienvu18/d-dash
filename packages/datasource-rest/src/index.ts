@@ -15,7 +15,10 @@ import type { RuntimeContext } from "@d-dash/core";
 // ---------------------------------------------------------------------------
 
 /** Minimal subset of the Fetch API used by this adapter. */
-export type FetchFn = (url: string, init?: FetchRequestInit) => Promise<FetchResponse>;
+export type FetchFn = (
+  url: string,
+  init?: FetchRequestInit,
+) => Promise<FetchResponse>;
 
 /** Minimal request init shape used by the adapter's injected fetch function. */
 export type FetchRequestInit = {
@@ -141,7 +144,13 @@ const CAPABILITIES: DatasourceCapabilities = {
   supportsMetadataDiscovery: true,
 };
 
-const DEFAULT_VISUALIZATIONS: VisualizationKind[] = ["timeseries", "stat", "table", "text", "html"];
+const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
+  "timeseries",
+  "stat",
+  "table",
+  "text",
+  "html",
+];
 
 type RestMetricWire =
   | string
@@ -158,7 +167,10 @@ type RestMetricsResponse =
       metrics?: RestMetricWire[];
     };
 
-function toMetricDefinition(metric: RestMetricWire, datasourceId: string): MetricDefinition {
+function toMetricDefinition(
+  metric: RestMetricWire,
+  datasourceId: string,
+): MetricDefinition {
   if (typeof metric === "string") {
     return {
       id: metric,
@@ -175,11 +187,15 @@ function toMetricDefinition(metric: RestMetricWire, datasourceId: string): Metri
     name: metric.name ?? id,
     unit: metric.unit ?? "",
     datasource: datasourceId,
-    supportedVisualizations: metric.supportedVisualizations ?? DEFAULT_VISUALIZATIONS,
+    supportedVisualizations:
+      metric.supportedVisualizations ?? DEFAULT_VISUALIZATIONS,
   };
 }
 
-function normalizeMetricsResponse(raw: unknown, datasourceId: string): MetricDefinition[] {
+function normalizeMetricsResponse(
+  raw: unknown,
+  datasourceId: string,
+): MetricDefinition[] {
   const response = raw as RestMetricsResponse;
   const source = Array.isArray(response)
     ? response
@@ -221,7 +237,8 @@ function normalizeMetricsResponse(raw: unknown, datasourceId: string): MetricDef
 export function createRestDatasourceAdapter(
   options: RestDatasourceAdapterOptions,
 ): DatasourceAdapter {
-  const resolveFetch: FetchFn = options.fetch ?? ((url, init) => fetch(url, init));
+  const resolveFetch: FetchFn =
+    options.fetch ?? ((url, init) => fetch(url, init));
   const timeoutMs = options.timeoutMs ?? 30_000;
 
   return {
@@ -233,13 +250,16 @@ export function createRestDatasourceAdapter(
       const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
       try {
-        const response = await resolveFetch(`${options.baseUrl}${normalizedPath}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
+        const response = await resolveFetch(
+          `${options.baseUrl}${normalizedPath}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...options.headers,
+            },
           },
-        });
+        );
 
         if (!response.ok) {
           return [];
@@ -260,7 +280,9 @@ export function createRestDatasourceAdapter(
         metric: request.metric,
         from: request.timeRange.from,
         to: request.timeRange.to,
-        ...(request.filters ? { filters: request.filters as Record<string, unknown> } : {}),
+        ...(request.filters
+          ? { filters: request.filters as Record<string, unknown> }
+          : {}),
         context: { traceId: context.traceId },
       };
 
@@ -327,8 +349,10 @@ export function createRestDatasourceAdapter(
           frames: normalizeFrames(envelope2.frames ?? []),
           warnings: envelope2.warnings,
           error: {
-            code: (envelope2.error?.code ?? "DATASOURCE_QUERY_FAILED") as import("@d-dash/core").DDashErrorCode,
-            message: envelope2.error?.message ?? "Datasource returned an error.",
+            code: (envelope2.error?.code ??
+              "DATASOURCE_QUERY_FAILED") as import("@d-dash/core").DDashErrorCode,
+            message:
+              envelope2.error?.message ?? "Datasource returned an error.",
             retriable: false,
           },
         };
@@ -340,8 +364,11 @@ export function createRestDatasourceAdapter(
           frames: normalizeFrames(envelope2.frames ?? []),
           warnings: envelope2.warnings,
           error: {
-            code: (envelope2.error?.code ?? "DATASOURCE_PARTIAL") as import("@d-dash/core").DDashErrorCode,
-            message: envelope2.error?.message ?? "Datasource returned a partial result.",
+            code: (envelope2.error?.code ??
+              "DATASOURCE_PARTIAL") as import("@d-dash/core").DDashErrorCode,
+            message:
+              envelope2.error?.message ??
+              "Datasource returned a partial result.",
             retriable: false,
           },
         };

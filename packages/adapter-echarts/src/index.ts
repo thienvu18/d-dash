@@ -66,7 +66,9 @@ export function dataFramesToTimeseriesOption(
       continue;
     }
 
-    const xAxisData = timeField.values.map((v) => (typeof v === "number" ? new Date(v).toISOString() : v));
+    const xAxisData = timeField.values.map((v) =>
+      typeof v === "number" ? new Date(v).toISOString() : v,
+    );
 
     for (const field of valueFields) {
       const data = field.values.map((v, i) => [xAxisData[i], v]);
@@ -75,7 +77,9 @@ export function dataFramesToTimeseriesOption(
         type: "line",
         data,
         smooth: true,
-        ...((options["seriesOverrides"] as Record<string, unknown> | undefined)?.[field.name] ?? {}),
+        ...((
+          options["seriesOverrides"] as Record<string, unknown> | undefined
+        )?.[field.name] ?? {}),
       });
     }
   }
@@ -115,7 +119,9 @@ export function dataFramesToStatOption(
       {
         type: "gauge",
         data: [{ name, value }],
-        ...((options["gaugeOverrides"] as Record<string, unknown> | undefined) ?? {}),
+        ...((options["gaugeOverrides"] as
+          | Record<string, unknown>
+          | undefined) ?? {}),
       },
     ],
     ...options,
@@ -130,7 +136,8 @@ export function widgetOptionsToTextOption(
   options: Record<string, unknown> = {},
 ): Record<string, unknown> {
   const text = typeof options["text"] === "string" ? options["text"] : "";
-  const subtext = typeof options["subtext"] === "string" ? options["subtext"] : undefined;
+  const subtext =
+    typeof options["subtext"] === "string" ? options["subtext"] : undefined;
 
   return {
     title: {
@@ -138,7 +145,11 @@ export function widgetOptionsToTextOption(
       subtext,
       left: "center",
       top: "center",
-      textStyle: { fontSize: 16, ...((options["textStyle"] as Record<string, unknown> | undefined) ?? {}) },
+      textStyle: {
+        fontSize: 16,
+        ...((options["textStyle"] as Record<string, unknown> | undefined) ??
+          {}),
+      },
     },
     xAxis: { show: false },
     yAxis: { show: false },
@@ -231,8 +242,12 @@ function makeEChartsAdapter(
 
     render(request: VisualizationRenderRequest, target: EChartsTarget): void {
       if (kind === "html") {
-        const opts = (request.options as Record<string, unknown> | undefined) ?? {};
-        const sanitizedHtml = widgetOptionsToHtmlContent(opts, adapterOptions.sanitizeHtml);
+        const opts =
+          (request.options as Record<string, unknown> | undefined) ?? {};
+        const sanitizedHtml = widgetOptionsToHtmlContent(
+          opts,
+          adapterOptions.sanitizeHtml,
+        );
         target.el.innerHTML = sanitizedHtml;
         return;
       }
@@ -243,7 +258,8 @@ function makeEChartsAdapter(
       }
 
       const chart = instances.get(target.el)!;
-      const opts = (request.options as Record<string, unknown> | undefined) ?? {};
+      const opts =
+        (request.options as Record<string, unknown> | undefined) ?? {};
       let option: Record<string, unknown>;
 
       if (kind === "timeseries") {

@@ -74,11 +74,21 @@ describe("validatePersistedDashboard", () => {
     });
 
     assert.equal(result.ok, false);
-    assert.ok(result.issues.some((issue) => issue.code === "DUPLICATE_LAYOUT_ID"));
-    assert.ok(result.issues.some((issue) => issue.code === "DUPLICATE_WIDGET_ID"));
-    assert.ok(result.issues.some((issue) => issue.code === "LAYOUT_REF_NOT_FOUND"));
-    assert.ok(result.issues.some((issue) => issue.code === "DATASOURCE_NOT_FOUND"));
-    assert.ok(result.issues.some((issue) => issue.code === "VISUALIZATION_NOT_FOUND"));
+    assert.ok(
+      result.issues.some((issue) => issue.code === "DUPLICATE_LAYOUT_ID"),
+    );
+    assert.ok(
+      result.issues.some((issue) => issue.code === "DUPLICATE_WIDGET_ID"),
+    );
+    assert.ok(
+      result.issues.some((issue) => issue.code === "LAYOUT_REF_NOT_FOUND"),
+    );
+    assert.ok(
+      result.issues.some((issue) => issue.code === "DATASOURCE_NOT_FOUND"),
+    );
+    assert.ok(
+      result.issues.some((issue) => issue.code === "VISUALIZATION_NOT_FOUND"),
+    );
     assert.ok(result.issues.some((issue) => issue.code === "METRIC_NOT_FOUND"));
   });
 

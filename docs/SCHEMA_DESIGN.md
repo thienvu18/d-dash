@@ -40,9 +40,7 @@ Example shape:
     "tags": ["infra", "prod"]
   },
   "timeRange": { "type": "relative", "value": "now-6h" },
-  "layout": [
-    { "id": "w1", "x": 0, "y": 0, "w": 6, "h": 4 }
-  ],
+  "layout": [{ "id": "w1", "x": 0, "y": 0, "w": 6, "h": 4 }],
   "widgets": []
 }
 ```

@@ -1,7 +1,10 @@
 import type { PersistedDashboard, SchemaVersion } from "./schema";
 
 /** Generic persisted dashboard shape that allows unsupported schema versions. */
-export type VersionedPersistedDashboard = Omit<PersistedDashboard, "schemaVersion"> & {
+export type VersionedPersistedDashboard = Omit<
+  PersistedDashboard,
+  "schemaVersion"
+> & {
   schemaVersion: number;
 };
 
@@ -20,7 +23,9 @@ class SchemaMigrationException extends Error {
   readonly code = "SCHEMA_UNSUPPORTED_VERSION" as const;
 
   constructor(version: number) {
-    super(`Unsupported schema version '${version}'. Supported versions: [${LATEST_SCHEMA_VERSION}].`);
+    super(
+      `Unsupported schema version '${version}'. Supported versions: [${LATEST_SCHEMA_VERSION}].`,
+    );
     this.name = "SchemaMigrationException";
   }
 }

@@ -1,9 +1,6 @@
 import type { DDashError } from "./errors";
 import type { JsonObject } from "./json";
-import type {
-  MetricDefinition,
-  VisualizationKind,
-} from "./schema";
+import type { MetricDefinition, VisualizationKind } from "./schema";
 import type { ResolvedTimeRange, RuntimeContext } from "./runtime";
 
 /** Scalar value types supported in DataField arrays. */
@@ -107,7 +104,10 @@ export interface VisualizationAdapter<TTarget = unknown> {
   /** Optional setup phase invoked before first render. */
   init?(target: TTarget): Promise<void> | void;
   /** Required render method for widget output. */
-  render(request: VisualizationRenderRequest, target: TTarget): Promise<void> | void;
+  render(
+    request: VisualizationRenderRequest,
+    target: TTarget,
+  ): Promise<void> | void;
   /** Optional resize hook invoked by host/grid lifecycle. */
   resize?(target: TTarget): Promise<void> | void;
   /** Optional cleanup hook invoked during teardown. */
@@ -137,7 +137,10 @@ export interface GridAdapter<TTarget = unknown> {
   /** Initialize grid runtime for the provided host target. */
   init(target: TTarget): Promise<void> | void;
   /** Apply normalized layout changes for widgets. */
-  applyLayout(changes: GridLayoutChange[], target: TTarget): Promise<void> | void;
+  applyLayout(
+    changes: GridLayoutChange[],
+    target: TTarget,
+  ): Promise<void> | void;
   /** Release all grid resources and listeners. */
   destroy(target: TTarget): Promise<void> | void;
 }

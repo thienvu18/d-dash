@@ -61,7 +61,9 @@ for (const pkg of listPublishablePackages()) {
 }
 
 if (failed.length > 0) {
-  console.error(`\nPackage ${isDryRun ? "dry-run publish" : "publish"} failed:\n${failed.map((name) => `- ${name}`).join("\n")}`);
+  console.error(
+    `\nPackage ${isDryRun ? "dry-run publish" : "publish"} failed:\n${failed.map((name) => `- ${name}`).join("\n")}`,
+  );
   process.exit(1);
 }
 

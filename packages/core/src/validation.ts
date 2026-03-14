@@ -1,5 +1,9 @@
 import type { DDashError } from "./errors";
-import type { MetricDefinition, PersistedDashboard, PersistedTimeRange } from "./schema";
+import type {
+  MetricDefinition,
+  PersistedDashboard,
+  PersistedTimeRange,
+} from "./schema";
 
 /** Stable validation issue codes produced by dashboard schema validation. */
 export type ValidationIssueCode =
@@ -189,8 +193,7 @@ export function validatePersistedDashboard(
         issues.push({
           code: "METRIC_VISUALIZATION_MISMATCH",
           path: `${pathPrefix}.visualization.type`,
-          message:
-            `visualization '${widget.visualization.type}' is not supported for metric '${metric.id}'.`,
+          message: `visualization '${widget.visualization.type}' is not supported for metric '${metric.id}'.`,
         });
       }
     }
@@ -210,7 +213,9 @@ export function validatePersistedDashboard(
  * Converts validation issues into a standardized `SCHEMA_INVALID` structured error.
  * Returns `undefined` when validation passed.
  */
-export function toSchemaValidationError(result: ValidationResult): DDashError | undefined {
+export function toSchemaValidationError(
+  result: ValidationResult,
+): DDashError | undefined {
   if (result.ok) {
     return undefined;
   }

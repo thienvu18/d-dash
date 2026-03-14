@@ -8,11 +8,11 @@ VictoriaMetrics-backed `DatasourceAdapter` for d-dash.
 import { createVictoriaMetricsDatasourceAdapter } from "@d-dash/datasource-victoriametrics";
 
 registry.registerDatasource(
-	createVictoriaMetricsDatasourceAdapter({
-		id: "vm",
-		baseUrl: "https://vm.example.com",
-		defaultStep: "60s",
-	}),
+  createVictoriaMetricsDatasourceAdapter({
+    id: "vm",
+    baseUrl: "https://vm.example.com",
+    defaultStep: "60s",
+  }),
 );
 ```
 

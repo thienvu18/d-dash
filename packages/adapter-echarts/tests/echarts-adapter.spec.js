@@ -62,11 +62,31 @@ describe("createEChartsAdapters", () => {
     const adapters = createEChartsAdapters({ echarts: factory });
 
     for (const adapter of adapters) {
-      assert.equal(adapter.capabilities?.supportsTimeSeries, true, `${adapter.type} supportsTimeSeries`);
-      assert.equal(adapter.capabilities?.supportsStat, true, `${adapter.type} supportsStat`);
-      assert.equal(adapter.capabilities?.supportsTextWidget, true, `${adapter.type} supportsTextWidget`);
-      assert.equal(adapter.capabilities?.supportsHtmlWidget, true, `${adapter.type} supportsHtmlWidget`);
-      assert.equal(adapter.capabilities?.supportsResize, true, `${adapter.type} supportsResize`);
+      assert.equal(
+        adapter.capabilities?.supportsTimeSeries,
+        true,
+        `${adapter.type} supportsTimeSeries`,
+      );
+      assert.equal(
+        adapter.capabilities?.supportsStat,
+        true,
+        `${adapter.type} supportsStat`,
+      );
+      assert.equal(
+        adapter.capabilities?.supportsTextWidget,
+        true,
+        `${adapter.type} supportsTextWidget`,
+      );
+      assert.equal(
+        adapter.capabilities?.supportsHtmlWidget,
+        true,
+        `${adapter.type} supportsHtmlWidget`,
+      );
+      assert.equal(
+        adapter.capabilities?.supportsResize,
+        true,
+        `${adapter.type} supportsResize`,
+      );
     }
   });
 
@@ -107,7 +127,10 @@ describe("createEChartsAdapters", () => {
     const [timeseries] = createEChartsAdapters({ echarts: factory });
     const target = makeTarget();
 
-    timeseries.render({ kind: "timeseries", frames: [], options: {}, context: makeContext() }, target);
+    timeseries.render(
+      { kind: "timeseries", frames: [], options: {}, context: makeContext() },
+      target,
+    );
 
     assert.equal(calls.init.length, 1);
   });
@@ -194,9 +217,7 @@ describe("dataFramesToTimeseriesOption", () => {
   test("skips frames with no time field", () => {
     const frames = [
       {
-        fields: [
-          { name: "cpu", type: "number", values: [10] },
-        ],
+        fields: [{ name: "cpu", type: "number", values: [10] }],
       },
     ];
 
@@ -218,9 +239,7 @@ describe("dataFramesToStatOption", () => {
   test("reads last value of first numeric field", () => {
     const frames = [
       {
-        fields: [
-          { name: "cpu", type: "number", values: [10, 42] },
-        ],
+        fields: [{ name: "cpu", type: "number", values: [10, 42] }],
       },
     ];
 
@@ -329,7 +348,9 @@ describe("render integration", () => {
     stat.render(
       {
         kind: "stat",
-        frames: [{ fields: [{ name: "memory", type: "number", values: [77] }] }],
+        frames: [
+          { fields: [{ name: "memory", type: "number", values: [77] }] },
+        ],
         options: {},
         context: makeContext(),
       },
@@ -371,7 +392,9 @@ describe("render integration", () => {
       {
         kind: "html",
         frames: [],
-        options: { html: '<p onclick="evil()">ok</p><script>alert(1)</script>' },
+        options: {
+          html: '<p onclick="evil()">ok</p><script>alert(1)</script>',
+        },
         context: makeContext(),
       },
       target,

@@ -89,7 +89,10 @@ describe("createGridstackAdapter", () => {
 
   test("init forwards gridOptions to GridStack.init", () => {
     const { factory, calls } = makeGridStackFactory();
-    const adapter = createGridstackAdapter({ GridStack: factory, gridOptions: { column: 12 } });
+    const adapter = createGridstackAdapter({
+      GridStack: factory,
+      gridOptions: { column: 12 },
+    });
     const target = makeTarget();
 
     adapter.init(target);
@@ -128,7 +131,10 @@ describe("createGridstackAdapter", () => {
     const target = makeTarget(); // no children
 
     adapter.init(target);
-    adapter.applyLayout([{ widgetId: "missing", x: 0, y: 0, w: 2, h: 2 }], target);
+    adapter.applyLayout(
+      [{ widgetId: "missing", x: 0, y: 0, w: 2, h: 2 }],
+      target,
+    );
 
     assert.equal(calls.update.length, 0);
   });

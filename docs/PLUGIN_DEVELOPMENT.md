@@ -7,12 +7,15 @@ This guide defines how to build adapters that conform to d-dash contracts.
 d-dash supports three adapter categories:
 
 1. Datasource adapters
+
 - Execute query requests and return normalized DataFrame results.
 
 2. Visualization adapters
+
 - Render widget outputs for a visualization type.
 
 3. Grid adapters
+
 - Render and synchronize dashboard layout behavior.
 
 ## 2. Adapter Contract Principles

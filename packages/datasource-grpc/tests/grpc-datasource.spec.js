@@ -93,7 +93,12 @@ describe("createGrpcDatasourceAdapter", () => {
               {
                 fields: [
                   { name: "time", type: "time", values: [1_000_000] },
-                  { name: "cpu", type: "number", values: [50], labels: { host: "srv-1" } },
+                  {
+                    name: "cpu",
+                    type: "number",
+                    values: [50],
+                    labels: { host: "srv-1" },
+                  },
                 ],
               },
             ],
@@ -102,7 +107,10 @@ describe("createGrpcDatasourceAdapter", () => {
       },
     });
 
-    const result = await adapter.query({ metric: "cpu", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "success");
     assert.equal(result.frames.length, 1);
@@ -118,13 +126,20 @@ describe("createGrpcDatasourceAdapter", () => {
           return {
             status: "partial",
             frames: [],
-            error: { code: "PARTIAL_DATA", message: "Shard timed out", retriable: true },
+            error: {
+              code: "PARTIAL_DATA",
+              message: "Shard timed out",
+              retriable: true,
+            },
           };
         },
       },
     });
 
-    const result = await adapter.query({ metric: "cpu", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "partial");
     assert.equal(result.error.code, "PARTIAL_DATA");
@@ -145,7 +160,10 @@ describe("createGrpcDatasourceAdapter", () => {
       },
     });
 
-    const result = await adapter.query({ metric: "cpu", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_QUERY_FAILED");
@@ -164,7 +182,10 @@ describe("createGrpcDatasourceAdapter", () => {
       },
     });
 
-    const result = await adapter.query({ metric: "cpu", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_QUERY_FAILED");
@@ -181,7 +202,12 @@ describe("createGrpcDatasourceAdapter", () => {
         async getMetrics() {
           return [
             "cpu.usage",
-            { id: "mem.usage", name: "Memory Usage", unit: "bytes", supportedVisualizations: ["timeseries"] },
+            {
+              id: "mem.usage",
+              name: "Memory Usage",
+              unit: "bytes",
+              supportedVisualizations: ["timeseries"],
+            },
           ];
         },
       },

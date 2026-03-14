@@ -4,12 +4,12 @@
 
 ## 1. Core Design Goals
 
-- Fully embeddable inside your app  
-- Dashboard stored and loaded as JSON  
-- Any chart / UI framework injectable  
-- Any datasource injectable  
-- No hard dependency on React or any UI stack  
-- Grafana-like mental model, but owned by you  
+- Fully embeddable inside your app
+- Dashboard stored and loaded as JSON
+- Any chart / UI framework injectable
+- Any datasource injectable
+- No hard dependency on React or any UI stack
+- Grafana-like mental model, but owned by you
 
 ---
 
@@ -49,21 +49,25 @@
 ## 3. Recommended Technology Stack
 
 ### Grid / Layout (UI-only)
-- gridstack.js (framework-agnostic, best default)  
-- react-grid-layout (React-only)  
+
+- gridstack.js (framework-agnostic, best default)
+- react-grid-layout (React-only)
 - golden-layout (IDE-style dashboards)
 
 ### Charts / Visualizations
+
 - Apache ECharts (closest to Grafana)
 - Vega / Vega-Lite (JSON-driven charts)
 - Chart.js / Recharts (simple)
 
 ### Tables
-- AG Grid  
-- Ant Design Table  
-- TanStack Table  
+
+- AG Grid
+- Ant Design Table
+- TanStack Table
 
 ### Core Runtime
+
 - Plain TypeScript (no UI dependency)
 - Optional: RxJS (streaming / live metrics)
 
@@ -109,9 +113,7 @@ dashboard-engine/
 {
   "dashboardId": "system-overview",
   "timeRange": { "from": "now-6h", "to": "now" },
-  "layout": [
-    { "i": "w1", "x": 0, "y": 0, "w": 6, "h": 4 }
-  ],
+  "layout": [{ "i": "w1", "x": 0, "y": 0, "w": 6, "h": 4 }],
   "widgets": [
     {
       "id": "cpu_widget",
@@ -135,9 +137,10 @@ dashboard-engine/
 ## 6. Metric Registry (Metadata Model)
 
 Used for:
-- metric picker UI  
-- validation  
-- defaults  
+
+- metric picker UI
+- validation
+- defaults
 
 ```ts
 type MetricDefinition = {
@@ -172,9 +175,10 @@ type TimeRange =
 ```
 
 Rules:
-- Dashboard has default  
-- Widget may override  
-- Datasource always receives resolved timestamps  
+
+- Dashboard has default
+- Widget may override
+- Datasource always receives resolved timestamps
 
 ---
 
@@ -211,15 +215,15 @@ class RestDatasource implements Datasource {
         name: "CPU Usage",
         unit: "percent",
         datasource: this.id,
-        supportedVisualizations: ["timeseries", "stat"]
-      }
+        supportedVisualizations: ["timeseries", "stat"],
+      },
     ];
   }
 
   async query({ metric, timeRange, filters }) {
     const res = await fetch("/api/metrics", {
       method: "POST",
-      body: JSON.stringify({ metric, timeRange, filters })
+      body: JSON.stringify({ metric, timeRange, filters }),
     });
 
     return await res.json(); // must return DataFrame[]
@@ -253,11 +257,7 @@ All visualizations consume this format.
 interface VisualizationAdapter {
   type: string;
 
-  render(
-    data: DataFrame[],
-    options: any,
-    container: HTMLElement
-  ): void;
+  render(data: DataFrame[], options: any, container: HTMLElement): void;
 }
 ```
 
@@ -270,14 +270,14 @@ class EChartsAdapter implements VisualizationAdapter {
   type = "timeseries";
 
   render(data, options, container) {
-    const timeField = data[0].fields.find(f => f.type === "time");
-    const valueField = data[0].fields.find(f => f.type === "number");
+    const timeField = data[0].fields.find((f) => f.type === "time");
+    const valueField = data[0].fields.find((f) => f.type === "number");
 
     const chart = echarts.init(container);
     chart.setOption({
       xAxis: { type: "category", data: timeField.values },
       yAxis: { type: "value" },
-      series: [{ type: "line", data: valueField.values }]
+      series: [{ type: "line", data: valueField.values }],
     });
   }
 }
@@ -321,19 +321,20 @@ class Registry {
 
 ## 15. What This Architecture Guarantees
 
-- You can swap chart libraries without touching data logic  
-- You can add datasources without touching UI  
-- Dashboards are portable JSON  
-- No vendor lock-in  
-- Scales from 10 to 10,000 dashboards  
+- You can swap chart libraries without touching data logic
+- You can add datasources without touching UI
+- Dashboards are portable JSON
+- No vendor lock-in
+- Scales from 10 to 10,000 dashboards
 
 ---
 
 ## 16. Final Verdict
 
 This is:
-- How Grafana works internally  
-- How embedded analytics SaaS are built  
-- The correct long-term architecture  
+
+- How Grafana works internally
+- How embedded analytics SaaS are built
+- The correct long-term architecture
 
 If you implement this, you will not need to rewrite it later.

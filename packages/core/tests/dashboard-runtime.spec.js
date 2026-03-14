@@ -93,26 +93,28 @@ describe("createDashboardRuntime", () => {
 
     const runtime = createDashboardRuntime({ registry });
 
-    const result = runtime.preflightDashboard(makeDashboard({
-      widgets: [
-        {
-          id: "w1",
-          layoutId: "l1",
-          datasource: "metrics",
-          query: { metric: "cpu.usage" },
-          visualization: { type: "timeseries" },
-          timeRange: { type: "inherit" },
-        },
-        {
-          id: "w2",
-          layoutId: "l1",
-          datasource: "logs",
-          query: { metric: "logs.count" },
-          visualization: { type: "table" },
-          timeRange: { type: "inherit" },
-        },
-      ],
-    }));
+    const result = runtime.preflightDashboard(
+      makeDashboard({
+        widgets: [
+          {
+            id: "w1",
+            layoutId: "l1",
+            datasource: "metrics",
+            query: { metric: "cpu.usage" },
+            visualization: { type: "timeseries" },
+            timeRange: { type: "inherit" },
+          },
+          {
+            id: "w2",
+            layoutId: "l1",
+            datasource: "logs",
+            query: { metric: "logs.count" },
+            visualization: { type: "table" },
+            timeRange: { type: "inherit" },
+          },
+        ],
+      }),
+    );
 
     assert.equal(result.ok, false);
     assert.deepEqual(result.missingDatasources, ["logs"]);
@@ -142,11 +144,18 @@ describe("createDashboardRuntime", () => {
       destroy() {},
     });
 
-    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
+    const runtime = createDashboardRuntime({
+      registry,
+      now: () => 1_710_000_000_000,
+    });
     const session = runtime.createSession(makeDashboard());
     const target = { containerEl: "div#grid" };
 
-    await runtime.applyDashboardLayout({ session, gridId: "gridstack", target });
+    await runtime.applyDashboardLayout({
+      session,
+      gridId: "gridstack",
+      target,
+    });
 
     assert.equal(applyCalls.length, 1);
     assert.equal(applyCalls[0].target, target);
@@ -237,16 +246,19 @@ describe("createDashboardRuntime", () => {
     const runtime = createDashboardRuntime({ registry });
     const session = runtime.createSession(makeDashboard());
 
-    await assert.rejects(runtime.executeWidget({
-      session,
-      widgetId: "missing",
-      target: {},
-      context: { traceId: "trace-runtime-2" },
-    }), (error) => {
-      assert.equal(error?.code, "RUNTIME_WIDGET_NOT_FOUND");
-      assert.match(String(error?.message), /not found in session/);
-      return true;
-    });
+    await assert.rejects(
+      runtime.executeWidget({
+        session,
+        widgetId: "missing",
+        target: {},
+        context: { traceId: "trace-runtime-2" },
+      }),
+      (error) => {
+        assert.equal(error?.code, "RUNTIME_WIDGET_NOT_FOUND");
+        assert.match(String(error?.message), /not found in session/);
+        return true;
+      },
+    );
   });
 
   test("executeAllWidgets runs all widgets in order", async () => {
@@ -282,7 +294,10 @@ describe("createDashboardRuntime", () => {
       context: { traceId: "trace-runtime-3" },
     });
 
-    assert.deepEqual(results.map((entry) => entry.widgetId), ["w1", "w2"]);
+    assert.deepEqual(
+      results.map((entry) => entry.widgetId),
+      ["w1", "w2"],
+    );
     assert.equal(results[0].result.status, "success");
     assert.equal(results[1].result.status, "success");
   });
@@ -303,15 +318,21 @@ describe("createDashboardRuntime", () => {
     const runtime = createDashboardRuntime({ registry });
     const session = runtime.createSession(makeTwoWidgetDashboard());
 
-    await assert.rejects(runtime.executeAllWidgets({
-      session,
-      targetByWidgetId: { w1: {} },
-      context: { traceId: "trace-runtime-4" },
-    }), (error) => {
-      assert.equal(error?.code, "RUNTIME_TARGET_MISSING");
-      assert.match(String(error?.message), /Missing render target for widget 'w2'/);
-      return true;
-    });
+    await assert.rejects(
+      runtime.executeAllWidgets({
+        session,
+        targetByWidgetId: { w1: {} },
+        context: { traceId: "trace-runtime-4" },
+      }),
+      (error) => {
+        assert.equal(error?.code, "RUNTIME_TARGET_MISSING");
+        assert.match(
+          String(error?.message),
+          /Missing render target for widget 'w2'/,
+        );
+        return true;
+      },
+    );
   });
 
   test("createSession throws structured schema error for invalid dashboard", () => {
@@ -329,12 +350,15 @@ describe("createDashboardRuntime", () => {
 
     const runtime = createDashboardRuntime({ registry });
 
-    assert.throws(() => {
-      runtime.createSession(makeDashboard({ meta: { title: "" } }));
-    }, (error) => {
-      assert.equal(error?.code, "SCHEMA_INVALID");
-      return true;
-    });
+    assert.throws(
+      () => {
+        runtime.createSession(makeDashboard({ meta: { title: "" } }));
+      },
+      (error) => {
+        assert.equal(error?.code, "SCHEMA_INVALID");
+        return true;
+      },
+    );
   });
 
   test("discoverMetrics aggregates and deduplicates across datasources", async () => {
@@ -469,11 +493,14 @@ describe("createDashboardRuntime", () => {
       ],
     });
 
-    const result = await runtime.validateDashboardWithRegistryMetrics(dashboard);
+    const result =
+      await runtime.validateDashboardWithRegistryMetrics(dashboard);
 
     assert.equal(result.ok, false);
     assert.ok(
-      result.issues.some((issue) => issue.code === "METRIC_VISUALIZATION_MISMATCH"),
+      result.issues.some(
+        (issue) => issue.code === "METRIC_VISUALIZATION_MISMATCH",
+      ),
     );
   });
 
@@ -527,8 +554,12 @@ describe("createDashboardRuntime", () => {
       render() {},
     });
 
-    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
-    const session = await runtime.createSessionWithRegistryMetrics(makeDashboard());
+    const runtime = createDashboardRuntime({
+      registry,
+      now: () => 1_710_000_000_000,
+    });
+    const session =
+      await runtime.createSessionWithRegistryMetrics(makeDashboard());
 
     assert.equal(session.dashboard.dashboardId, "system-overview");
     assert.equal(session.widgets.length, 1);
@@ -609,7 +640,12 @@ describe("createDashboardRuntime", () => {
     });
 
     const session = runtime.createSession(makeDashboard());
-    await runtime.executeWidget({ session, widgetId: "w1", target: {}, context: { traceId: "trace-events-1" } });
+    await runtime.executeWidget({
+      session,
+      widgetId: "w1",
+      target: {},
+      context: { traceId: "trace-events-1" },
+    });
 
     assert.equal(events.length, 2);
     assert.equal(events[0].type, "widget.execute.started");
@@ -646,7 +682,12 @@ describe("createDashboardRuntime", () => {
     const session = runtime.createSession(makeDashboard());
 
     await assert.rejects(
-      runtime.executeWidget({ session, widgetId: "w1", target: {}, context: { traceId: "trace-events-2" } }),
+      runtime.executeWidget({
+        session,
+        widgetId: "w1",
+        target: {},
+        context: { traceId: "trace-events-2" },
+      }),
     );
 
     assert.equal(events.length, 2);

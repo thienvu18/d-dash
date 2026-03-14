@@ -5,7 +5,9 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
 
-const packageDirs = readdirSync(join(process.cwd(), "packages"), { withFileTypes: true })
+const packageDirs = readdirSync(join(process.cwd(), "packages"), {
+  withFileTypes: true,
+})
   .filter((entry) => entry.isDirectory())
   .map((entry) => join(process.cwd(), "packages", entry.name));
 
@@ -31,4 +33,6 @@ if (uniqueVersions.size > 1) {
   process.exit(1);
 }
 
-console.log(`Version consistency passed (${Array.from(uniqueVersions)[0] ?? "n/a"}).`);
+console.log(
+  `Version consistency passed (${Array.from(uniqueVersions)[0] ?? "n/a"}).`,
+);

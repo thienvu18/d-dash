@@ -12,25 +12,30 @@ This document defines the runtime architecture and ownership boundaries for d-da
 ## 2. Layered Architecture
 
 1. Persisted Dashboard Layer
+
 - Source: JSON dashboard definition.
 - Responsibility: store user intent only.
 
 2. Core Runtime Layer
+
 - Responsibility: parse, validate, resolve, orchestrate, normalize.
 - No chart/grid/framework imports.
 
 3. Adapter Layer
+
 - Datasource adapters: execute queries and return normalized frames.
 - Visualization adapters: render/update/destroy visual outputs.
 - Grid adapter: map layout contract to layout engine and events.
 
 4. Host App Layer
+
 - Responsibility: container creation, framework integration, app lifecycle.
 - Chooses adapters and wires runtime execution to UI lifecycle.
 
 ## 3. Ownership Boundaries
 
 1. Core owns:
+
 - schema validation
 - time-range resolution
 - registry lookup and compatibility checks
@@ -38,12 +43,14 @@ This document defines the runtime architecture and ownership boundaries for d-da
 - normalized runtime events and errors
 
 2. Adapters own:
+
 - library-specific integrations
 - transport and protocol specifics
 - render lifecycle for specific visualization targets
 - grid engine behavior and event bridging
 
 3. Host app owns:
+
 - UI framework mount/update/unmount
 - auth/session wiring for datasource clients
 - policy decisions (refresh cadence, retry strategy, feature flags)
@@ -67,17 +74,21 @@ Rule: if logic depends on a specific external library API, it belongs in an adap
 All adapter types should follow explicit lifecycle patterns.
 
 1. init
+
 - Optional one-time setup.
 
 2. execute or render
+
 - Datasource: execute query.
 - Visualization: render or update output.
 - Grid: apply layout and sync events.
 
 3. resize or reconcile
+
 - Visualization and grid adapters should handle host resize/layout changes.
 
 4. destroy
+
 - Required cleanup path to avoid memory leaks.
 
 ## 6. Capability Model
@@ -87,11 +98,13 @@ Adapters should declare capabilities so runtime can pre-validate compatibility.
 Examples:
 
 1. Datasource capabilities
+
 - supportsStreaming
 - supportsAdHocFilters
 - supportsMetadataDiscovery
 
 2. Visualization capabilities
+
 - supportsTimeSeries
 - supportsStat
 - supportsTextWidget
@@ -99,6 +112,7 @@ Examples:
 - supportsTheming
 
 3. Grid capabilities
+
 - supportsDrag
 - supportsResize
 - supportsResponsiveBreakpoints

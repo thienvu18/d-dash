@@ -8,11 +8,11 @@ JSON REST-backed `DatasourceAdapter` for d-dash.
 import { createRestDatasourceAdapter } from "@d-dash/datasource-rest";
 
 registry.registerDatasource(
-	createRestDatasourceAdapter({
-		id: "metrics",
-		baseUrl: "https://api.example.com/v1",
-		headers: { Authorization: `Bearer ${token}` },
-	}),
+  createRestDatasourceAdapter({
+    id: "metrics",
+    baseUrl: "https://api.example.com/v1",
+    headers: { Authorization: `Bearer ${token}` },
+  }),
 );
 ```
 

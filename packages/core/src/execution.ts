@@ -49,7 +49,10 @@ export async function executeWidgetQuery(
 ): Promise<DatasourceQueryResult> {
   const adapter = registry.requireDatasource(request.datasourceId);
 
-  if (request.query.filters && adapter.capabilities?.supportsAdHocFilters === false) {
+  if (
+    request.query.filters &&
+    adapter.capabilities?.supportsAdHocFilters === false
+  ) {
     throw new CapabilityMismatchException(
       "Datasource adapter does not support ad-hoc filters.",
       {
@@ -75,8 +78,13 @@ export async function executeWidgetRender<TTarget = unknown>(
   registry: AdapterRegistry,
   input: ExecuteWidgetRenderInput<TTarget>,
 ): Promise<void> {
-  const adapter = registry.requireVisualization(input.request.visualization.type);
-  assertVisualizationCapability(input.request.visualization.type, adapter.capabilities);
+  const adapter = registry.requireVisualization(
+    input.request.visualization.type,
+  );
+  assertVisualizationCapability(
+    input.request.visualization.type,
+    adapter.capabilities,
+  );
 
   const renderRequest: VisualizationRenderRequest = {
     kind: input.request.visualization.type,
@@ -159,19 +167,25 @@ function assertDatasourceQueryResult(
     result.status !== "partial" &&
     result.status !== "error"
   ) {
-    throw new DatasourceQueryException("Datasource returned an invalid status.", {
-      datasourceId,
-      widgetId,
-      status: String((result as { status?: unknown }).status),
-    });
+    throw new DatasourceQueryException(
+      "Datasource returned an invalid status.",
+      {
+        datasourceId,
+        widgetId,
+        status: String((result as { status?: unknown }).status),
+      },
+    );
   }
 
   if (!Array.isArray(result.frames)) {
-    throw new DatasourceQueryException("Datasource result frames must be an array.", {
-      datasourceId,
-      widgetId,
-      status: result.status,
-    });
+    throw new DatasourceQueryException(
+      "Datasource result frames must be an array.",
+      {
+        datasourceId,
+        widgetId,
+        status: result.status,
+      },
+    );
   }
 
   // Validate frame payload at runtime to guard adapters crossing package boundaries.
@@ -193,12 +207,15 @@ function assertDatasourceQueryResult(
       };
 
       if (typeof field.name !== "string" || field.name.trim().length === 0) {
-        throw new DatasourceQueryException("DataField.name must be a non-empty string.", {
-          datasourceId,
-          widgetId,
-          frameIndex: i,
-          fieldIndex: j,
-        });
+        throw new DatasourceQueryException(
+          "DataField.name must be a non-empty string.",
+          {
+            datasourceId,
+            widgetId,
+            frameIndex: i,
+            fieldIndex: j,
+          },
+        );
       }
 
       if (
@@ -217,39 +234,54 @@ function assertDatasourceQueryResult(
       }
 
       if (!Array.isArray(field.values)) {
-        throw new DatasourceQueryException("DataField.values must be an array.", {
-          datasourceId,
-          widgetId,
-          frameIndex: i,
-          fieldIndex: j,
-        });
-      }
-
-      for (let k = 0; k < field.values.length; k += 1) {
-        if (!isValidScalarForType(field.values[k], field.type)) {
-          throw new DatasourceQueryException("DataField.values contains invalid scalar value.", {
+        throw new DatasourceQueryException(
+          "DataField.values must be an array.",
+          {
             datasourceId,
             widgetId,
             frameIndex: i,
             fieldIndex: j,
-            valueIndex: k,
-            expectedType: field.type,
-          });
+          },
+        );
+      }
+
+      for (let k = 0; k < field.values.length; k += 1) {
+        if (!isValidScalarForType(field.values[k], field.type)) {
+          throw new DatasourceQueryException(
+            "DataField.values contains invalid scalar value.",
+            {
+              datasourceId,
+              widgetId,
+              frameIndex: i,
+              fieldIndex: j,
+              valueIndex: k,
+              expectedType: field.type,
+            },
+          );
         }
       }
     }
   }
 
-  if ((result.status === "partial" || result.status === "error") && !isDDashError(result.error)) {
-    throw new DatasourceQueryException("Datasource partial/error result must include a structured error.", {
-      datasourceId,
-      widgetId,
-      status: result.status,
-    });
+  if (
+    (result.status === "partial" || result.status === "error") &&
+    !isDDashError(result.error)
+  ) {
+    throw new DatasourceQueryException(
+      "Datasource partial/error result must include a structured error.",
+      {
+        datasourceId,
+        widgetId,
+        status: result.status,
+      },
+    );
   }
 }
 
-function isValidScalarForType(value: unknown, type: "time" | "number" | "string" | "boolean"): boolean {
+function isValidScalarForType(
+  value: unknown,
+  type: "time" | "number" | "string" | "boolean",
+): boolean {
   if (value === null) {
     return true;
   }
@@ -275,7 +307,10 @@ function isDDashError(value: unknown): value is DDashError {
   }
 
   const maybeError = value as { code?: unknown; message?: unknown };
-  return typeof maybeError.code === "string" && typeof maybeError.message === "string";
+  return (
+    typeof maybeError.code === "string" &&
+    typeof maybeError.message === "string"
+  );
 }
 
 class CapabilityMismatchException extends Error implements DDashError {
@@ -292,13 +327,15 @@ class CapabilityMismatchException extends Error implements DDashError {
 
 function assertVisualizationCapability(
   kind: string,
-  capabilities: {
-    supportsTimeSeries?: boolean;
-    supportsStat?: boolean;
-    supportsTable?: boolean;
-    supportsTextWidget?: boolean;
-    supportsHtmlWidget?: boolean;
-  } | undefined,
+  capabilities:
+    | {
+        supportsTimeSeries?: boolean;
+        supportsStat?: boolean;
+        supportsTable?: boolean;
+        supportsTextWidget?: boolean;
+        supportsHtmlWidget?: boolean;
+      }
+    | undefined,
 ): void {
   if (!capabilities) {
     return;

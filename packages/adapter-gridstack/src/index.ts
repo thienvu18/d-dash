@@ -1,11 +1,18 @@
-import type { GridAdapter, GridCapabilities, GridLayoutChange } from "@d-dash/core";
+import type {
+  GridAdapter,
+  GridCapabilities,
+  GridLayoutChange,
+} from "@d-dash/core";
 
 /**
  * Minimal subset of the gridstack.js GridStack instance API required by this adapter.
  * Using a structural interface keeps the adapter decoupled from gridstack's exact import path.
  */
 export type GridStackInstance = {
-  update(el: Element, opts: { x: number; y: number; w: number; h: number }): void;
+  update(
+    el: Element,
+    opts: { x: number; y: number; w: number; h: number },
+  ): void;
   on?(event: "change", callback: GridStackChangeCallback): void;
   off?(event: "change", callback: GridStackChangeCallback): void;
   destroy(removeDOM?: boolean): void;
@@ -20,7 +27,10 @@ type GridStackNodeChange = {
   el?: Element & { getAttribute?(name: string): string | null };
 };
 
-type GridStackChangeCallback = (event: unknown, items: GridStackNodeChange[]) => void;
+type GridStackChangeCallback = (
+  event: unknown,
+  items: GridStackNodeChange[],
+) => void;
 
 /**
  * Factory interface matching gridstack.js static `GridStack.init()`.
@@ -92,7 +102,7 @@ export function createGridstackAdapter(
             const widgetId =
               item.id ??
               (typeof item.el?.getAttribute === "function"
-                ? item.el.getAttribute("gs-id") ?? undefined
+                ? (item.el.getAttribute("gs-id") ?? undefined)
                 : undefined);
 
             if (!widgetId) {

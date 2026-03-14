@@ -41,7 +41,10 @@ describe("time range resolver", () => {
       source: "dashboard",
     };
 
-    assert.equal(resolveWidgetTimeRange(undefined, dashboardRange), dashboardRange);
+    assert.equal(
+      resolveWidgetTimeRange(undefined, dashboardRange),
+      dashboardRange,
+    );
     assert.equal(
       resolveWidgetTimeRange({ type: "inherit" }, dashboardRange),
       dashboardRange,

@@ -43,7 +43,11 @@ class RegistryException extends Error implements RegistryError {
   readonly details?: RegistryError["details"];
   readonly retriable?: RegistryError["retriable"];
 
-  constructor(code: RegistryError["code"], message: string, details?: RegistryError["details"]) {
+  constructor(
+    code: RegistryError["code"],
+    message: string,
+    details?: RegistryError["details"],
+  ) {
     super(message);
     this.name = "RegistryException";
     this.code = code;
@@ -52,8 +56,11 @@ class RegistryException extends Error implements RegistryError {
   }
 }
 
-export function createAdapterRegistry(options: RegistryOptions = {}): AdapterRegistry {
-  const duplicatePolicy: RegistryDuplicatePolicy = options.duplicatePolicy ?? "reject";
+export function createAdapterRegistry(
+  options: RegistryOptions = {},
+): AdapterRegistry {
+  const duplicatePolicy: RegistryDuplicatePolicy =
+    options.duplicatePolicy ?? "reject";
 
   const datasources = new Map<string, DatasourceAdapter>();
   const visualizations = new Map<VisualizationKind, VisualizationAdapter>();
@@ -61,11 +68,23 @@ export function createAdapterRegistry(options: RegistryOptions = {}): AdapterReg
 
   return {
     registerDatasource(adapter: DatasourceAdapter): void {
-      registerWithPolicy(datasources, adapter.id, adapter, duplicatePolicy, "datasource");
+      registerWithPolicy(
+        datasources,
+        adapter.id,
+        adapter,
+        duplicatePolicy,
+        "datasource",
+      );
     },
 
     registerVisualization(adapter: VisualizationAdapter): void {
-      registerWithPolicy(visualizations, adapter.type, adapter, duplicatePolicy, "visualization");
+      registerWithPolicy(
+        visualizations,
+        adapter.type,
+        adapter,
+        duplicatePolicy,
+        "visualization",
+      );
     },
 
     registerGrid(adapter: GridAdapter): void {
@@ -88,7 +107,9 @@ export function createAdapterRegistry(options: RegistryOptions = {}): AdapterReg
       return datasources.get(id);
     },
 
-    getVisualization(kind: VisualizationKind): VisualizationAdapter | undefined {
+    getVisualization(
+      kind: VisualizationKind,
+    ): VisualizationAdapter | undefined {
       return visualizations.get(kind);
     },
 

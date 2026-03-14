@@ -60,7 +60,10 @@ export type GrpcMetricWire =
 /** Transport client contract injected into the gRPC datasource adapter. */
 export type GrpcDatasourceClient = {
   /** Execute a datasource query over gRPC and return normalized wire envelope. */
-  query(request: GrpcQueryEnvelope, context: RuntimeContext): Promise<GrpcResponseEnvelope>;
+  query(
+    request: GrpcQueryEnvelope,
+    context: RuntimeContext,
+  ): Promise<GrpcResponseEnvelope>;
   /** Optionally discover supported metrics from backend metadata services. */
   getMetrics?(): Promise<GrpcMetricWire[]>;
 };
@@ -71,7 +74,13 @@ export type GrpcDatasourceAdapterOptions = {
   client: GrpcDatasourceClient;
 };
 
-const DEFAULT_VISUALIZATIONS: VisualizationKind[] = ["timeseries", "stat", "table", "text", "html"];
+const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
+  "timeseries",
+  "stat",
+  "table",
+  "text",
+  "html",
+];
 
 function normalizeFrames(rawFrames: GrpcFrame[]): DataFrame[] {
   return rawFrames.map((frame) => ({
@@ -86,7 +95,10 @@ function normalizeFrames(rawFrames: GrpcFrame[]): DataFrame[] {
   }));
 }
 
-function toMetricDefinition(metric: GrpcMetricWire, datasourceId: string): MetricDefinition {
+function toMetricDefinition(
+  metric: GrpcMetricWire,
+  datasourceId: string,
+): MetricDefinition {
   if (typeof metric === "string") {
     return {
       id: metric,
@@ -103,7 +115,8 @@ function toMetricDefinition(metric: GrpcMetricWire, datasourceId: string): Metri
     name: metric.name ?? id,
     unit: metric.unit ?? "",
     datasource: datasourceId,
-    supportedVisualizations: metric.supportedVisualizations ?? DEFAULT_VISUALIZATIONS,
+    supportedVisualizations:
+      metric.supportedVisualizations ?? DEFAULT_VISUALIZATIONS,
   };
 }
 
@@ -131,7 +144,9 @@ function mapTransportError(error: unknown, datasourceId: string) {
     frames: [],
     error: {
       code: "DATASOURCE_QUERY_FAILED" as DDashErrorCode,
-      message: message ?? `gRPC transport error querying datasource '${datasourceId}'.`,
+      message:
+        message ??
+        `gRPC transport error querying datasource '${datasourceId}'.`,
       retriable: isRetriableGrpcCode(code),
       details: code ? { grpcCode: code } : undefined,
     },
@@ -186,7 +201,9 @@ export function createGrpcDatasourceAdapter(
         metric: request.metric,
         from: request.timeRange.from,
         to: request.timeRange.to,
-        ...(request.filters ? { filters: request.filters as Record<string, unknown> } : {}),
+        ...(request.filters
+          ? { filters: request.filters as Record<string, unknown> }
+          : {}),
         context: {
           traceId: context.traceId,
         },
@@ -207,8 +224,11 @@ export function createGrpcDatasourceAdapter(
           frames,
           warnings: response.warnings,
           error: {
-            code: (response.error?.code ?? "DATASOURCE_QUERY_FAILED") as DDashErrorCode,
-            message: response.error?.message ?? "Datasource returned a gRPC error response.",
+            code: (response.error?.code ??
+              "DATASOURCE_QUERY_FAILED") as DDashErrorCode,
+            message:
+              response.error?.message ??
+              "Datasource returned a gRPC error response.",
             retriable:
               typeof response.error?.retriable === "boolean"
                 ? response.error.retriable
@@ -223,8 +243,11 @@ export function createGrpcDatasourceAdapter(
           frames,
           warnings: response.warnings,
           error: {
-            code: (response.error?.code ?? "DATASOURCE_PARTIAL") as DDashErrorCode,
-            message: response.error?.message ?? "Datasource returned a partial gRPC response.",
+            code: (response.error?.code ??
+              "DATASOURCE_PARTIAL") as DDashErrorCode,
+            message:
+              response.error?.message ??
+              "Datasource returned a partial gRPC response.",
             retriable:
               typeof response.error?.retriable === "boolean"
                 ? response.error.retriable

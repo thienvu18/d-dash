@@ -8,13 +8,13 @@ gRPC-backed `DatasourceAdapter` for d-dash.
 import { createGrpcDatasourceAdapter } from "@d-dash/datasource-grpc";
 
 const adapter = createGrpcDatasourceAdapter({
-	id: "grpc",
-	client: {
-		async query(request, context) {
-			// Map request to protobuf call, then map response envelope.
-			return { status: "success", frames: [] };
-		},
-	},
+  id: "grpc",
+  client: {
+    async query(request, context) {
+      // Map request to protobuf call, then map response envelope.
+      return { status: "success", frames: [] };
+    },
+  },
 });
 
 registry.registerDatasource(adapter);

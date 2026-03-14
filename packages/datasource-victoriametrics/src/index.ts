@@ -12,7 +12,10 @@ import type {
 } from "@d-dash/core";
 
 /** Minimal fetch function contract consumed by this adapter. */
-export type FetchFn = (url: string, init?: FetchRequestInit) => Promise<FetchResponse>;
+export type FetchFn = (
+  url: string,
+  init?: FetchRequestInit,
+) => Promise<FetchResponse>;
 
 /** Minimal request-init shape for injected fetch clients. */
 export type FetchRequestInit = {
@@ -68,7 +71,13 @@ const CAPABILITIES: DatasourceCapabilities = {
   supportsMetadataDiscovery: true,
 };
 
-const DEFAULT_VISUALIZATIONS: VisualizationKind[] = ["timeseries", "stat", "table", "text", "html"];
+const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
+  "timeseries",
+  "stat",
+  "table",
+  "text",
+  "html",
+];
 
 function toNumber(value: number | string): number {
   return typeof value === "number" ? value : Number(value);
@@ -154,7 +163,9 @@ function buildFramesFromVmEnvelope(envelope: VmSuccessEnvelope): DataFrame[] {
   const results = envelope.data?.result ?? [];
 
   if (resultType === "vector") {
-    return results.map((entry) => normalizeInstantResult(entry as VmInstantResult));
+    return results.map((entry) =>
+      normalizeInstantResult(entry as VmInstantResult),
+    );
   }
 
   return results.map((entry) => normalizeRangeResult(entry as VmRangeResult));
@@ -165,7 +176,10 @@ type VmMetricDiscoveryEnvelope = {
   data?: string[];
 };
 
-function normalizeVmMetricDiscoveryResponse(raw: unknown, datasourceId: string): MetricDefinition[] {
+function normalizeVmMetricDiscoveryResponse(
+  raw: unknown,
+  datasourceId: string,
+): MetricDefinition[] {
   const envelope = raw as VmMetricDiscoveryEnvelope;
   if (!Array.isArray(envelope.data)) {
     return [];
@@ -199,13 +213,16 @@ export function createVictoriaMetricsDatasourceAdapter(
       const normalizedPath = path.startsWith("/") ? path : `/${path}`;
 
       try {
-        const response = await fetchImpl(`${options.baseUrl}${normalizedPath}`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...options.headers,
+        const response = await fetchImpl(
+          `${options.baseUrl}${normalizedPath}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...options.headers,
+            },
           },
-        });
+        );
 
         if (!response.ok) {
           return [];
@@ -218,8 +235,12 @@ export function createVictoriaMetricsDatasourceAdapter(
       }
     },
 
-    async query(request: DatasourceQueryRequest, context: RuntimeContext): Promise<DatasourceQueryResult> {
-      const filters = (request.filters as Record<string, unknown> | undefined) ?? undefined;
+    async query(
+      request: DatasourceQueryRequest,
+      context: RuntimeContext,
+    ): Promise<DatasourceQueryResult> {
+      const filters =
+        (request.filters as Record<string, unknown> | undefined) ?? undefined;
       const instant = shouldUseInstantQuery(filters);
       const endpoint = instant ? "/api/v1/query" : "/api/v1/query_range";
 

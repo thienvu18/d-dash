@@ -1,5 +1,9 @@
 import type { JsonObject } from "./json";
-import type { PersistedWidget, WidgetQuery, WidgetVisualization } from "./schema";
+import type {
+  PersistedWidget,
+  WidgetQuery,
+  WidgetVisualization,
+} from "./schema";
 
 /** Fully resolved absolute time range used for execution. */
 export type ResolvedTimeRange = {
@@ -63,16 +67,25 @@ class TimeRangeResolveException extends Error implements TimeRangeResolveError {
  * Resolves dashboard-level time range input into absolute epoch millisecond bounds.
  */
 export function resolveDashboardTimeRange(
-  input: { type: "relative"; value: string } | { type: "absolute"; from: number; to: number },
+  input:
+    | { type: "relative"; value: string }
+    | { type: "absolute"; from: number; to: number },
   options: TimeResolveOptions = {},
 ): ResolvedTimeRange {
   const now = Number.isFinite(options.now) ? Number(options.now) : Date.now();
 
   if (input.type === "absolute") {
-    if (!Number.isFinite(input.from) || !Number.isFinite(input.to) || input.from > input.to) {
-      throw new TimeRangeResolveException("Invalid absolute dashboard time range.", {
-        type: input.type,
-      });
+    if (
+      !Number.isFinite(input.from) ||
+      !Number.isFinite(input.to) ||
+      input.from > input.to
+    ) {
+      throw new TimeRangeResolveException(
+        "Invalid absolute dashboard time range.",
+        {
+          type: input.type,
+        },
+      );
     }
 
     return {
@@ -95,7 +108,11 @@ export function resolveDashboardTimeRange(
  * When `inherit` (or undefined), the dashboard-resolved range is returned.
  */
 export function resolveWidgetTimeRange(
-  widgetTimeRange: { type: "inherit" } | { type: "relative"; value: string } | { type: "absolute"; from: number; to: number } | undefined,
+  widgetTimeRange:
+    | { type: "inherit" }
+    | { type: "relative"; value: string }
+    | { type: "absolute"; from: number; to: number }
+    | undefined,
   dashboardResolvedTimeRange: ResolvedTimeRange,
   options: TimeResolveOptions = {},
 ): ResolvedTimeRange {
@@ -111,9 +128,12 @@ export function resolveWidgetTimeRange(
       !Number.isFinite(widgetTimeRange.to) ||
       widgetTimeRange.from > widgetTimeRange.to
     ) {
-      throw new TimeRangeResolveException("Invalid absolute widget time range.", {
-        type: widgetTimeRange.type,
-      });
+      throw new TimeRangeResolveException(
+        "Invalid absolute widget time range.",
+        {
+          type: widgetTimeRange.type,
+        },
+      );
     }
 
     return {
@@ -149,9 +169,12 @@ function parseRelativeRange(
   const unit = match[2].toLowerCase();
 
   if (!Number.isInteger(amount) || amount <= 0) {
-    throw new TimeRangeResolveException("Relative time range amount must be a positive integer.", {
-      expression: trimmed,
-    });
+    throw new TimeRangeResolveException(
+      "Relative time range amount must be a positive integer.",
+      {
+        expression: trimmed,
+      },
+    );
   }
 
   const unitMs = unitToMs(unit);
@@ -173,8 +196,11 @@ function unitToMs(unit: string): number {
     case "w":
       return 7 * 24 * 60 * 60 * 1000;
     default:
-      throw new TimeRangeResolveException("Unsupported relative time range unit.", {
-        unit,
-      });
+      throw new TimeRangeResolveException(
+        "Unsupported relative time range unit.",
+        {
+          unit,
+        },
+      );
   }
 }

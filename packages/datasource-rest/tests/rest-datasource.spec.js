@@ -44,7 +44,9 @@ function makeFailingFetch(error) {
 
 /** Returns a fetch mock that rejects with an AbortError. */
 function makeAbortFetch() {
-  return makeFailingFetch(Object.assign(new Error("aborted"), { name: "AbortError" }));
+  return makeFailingFetch(
+    Object.assign(new Error("aborted"), { name: "AbortError" }),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -53,23 +55,36 @@ function makeAbortFetch() {
 
 describe("createRestDatasourceAdapter", () => {
   test("adapter id matches options.id", () => {
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+    });
     assert.equal(adapter.id, "metrics");
   });
 
   test("adapter declares adHocFilters capability", () => {
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+    });
     assert.equal(adapter.capabilities?.supportsAdHocFilters, true);
   });
 
   test("adapter declares metadata discovery capability", () => {
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+    });
     assert.equal(adapter.capabilities?.supportsMetadataDiscovery, true);
   });
 
   test("getMetrics maps string metric list response", async () => {
     const { fetchFn, getLastRequest } = makeFetch(["cpu.usage", "mem.usage"]);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
     const metrics = await adapter.getMetrics();
 
@@ -82,10 +97,19 @@ describe("createRestDatasourceAdapter", () => {
   test("getMetrics maps object metric list response", async () => {
     const { fetchFn } = makeFetch({
       metrics: [
-        { id: "cpu.usage", name: "CPU Usage", unit: "percent", supportedVisualizations: ["timeseries"] },
+        {
+          id: "cpu.usage",
+          name: "CPU Usage",
+          unit: "percent",
+          supportedVisualizations: ["timeseries"],
+        },
       ],
     });
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
     const metrics = await adapter.getMetrics();
 
@@ -97,7 +121,11 @@ describe("createRestDatasourceAdapter", () => {
 
   test("getMetrics returns empty array on HTTP errors", async () => {
     const { fetchFn } = makeFetch({}, { ok: false, status: 500 });
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
     const metrics = await adapter.getMetrics();
 
@@ -111,10 +139,18 @@ describe("createRestDatasourceAdapter", () => {
   test("query POSTs to baseUrl/query with correct envelope", async () => {
     const successBody = { status: "success", frames: [] };
     const { fetchFn, getLastRequest } = makeFetch(successBody);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
     await adapter.query(
-      { metric: "cpu.usage", timeRange: makeTimeRange(), filters: { host: "srv1" } },
+      {
+        metric: "cpu.usage",
+        timeRange: makeTimeRange(),
+        filters: { host: "srv1" },
+      },
       makeContext(),
     );
 
@@ -131,7 +167,10 @@ describe("createRestDatasourceAdapter", () => {
   });
 
   test("query forwards custom headers", async () => {
-    const { fetchFn, getLastRequest } = makeFetch({ status: "success", frames: [] });
+    const { fetchFn, getLastRequest } = makeFetch({
+      status: "success",
+      frames: [],
+    });
     const adapter = createRestDatasourceAdapter({
       id: "metrics",
       baseUrl: BASE_URL,
@@ -139,7 +178,10 @@ describe("createRestDatasourceAdapter", () => {
       fetch: fetchFn,
     });
 
-    await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     const req = getLastRequest();
     assert.equal(req.init.headers["Authorization"], "Bearer tok");
@@ -163,9 +205,16 @@ describe("createRestDatasourceAdapter", () => {
       ],
     };
     const { fetchFn } = makeFetch(body);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "success");
     assert.equal(result.frames.length, 1);
@@ -181,9 +230,16 @@ describe("createRestDatasourceAdapter", () => {
       error: { code: "PARTIAL_DATA", message: "Some shards timed out." },
     };
     const { fetchFn } = makeFetch(body);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "partial");
     assert.equal(result.error.code, "PARTIAL_DATA");
@@ -197,9 +253,16 @@ describe("createRestDatasourceAdapter", () => {
       error: { code: "METRIC_NOT_FOUND", message: "Unknown metric." },
     };
     const { fetchFn } = makeFetch(body);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "unknown", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "unknown", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "METRIC_NOT_FOUND");
@@ -211,9 +274,16 @@ describe("createRestDatasourceAdapter", () => {
 
   test("maps HTTP 4xx to structured error result (non-retriable)", async () => {
     const { fetchFn } = makeFetch(null, { ok: false, status: 404 });
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_HTTP_ERROR");
@@ -223,9 +293,16 @@ describe("createRestDatasourceAdapter", () => {
 
   test("maps HTTP 5xx to retriable structured error result", async () => {
     const { fetchFn } = makeFetch(null, { ok: false, status: 503 });
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.retriable, true);
@@ -238,7 +315,10 @@ describe("createRestDatasourceAdapter", () => {
       fetch: makeFailingFetch(new Error("ECONNREFUSED")),
     });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_QUERY_FAILED");
@@ -253,7 +333,10 @@ describe("createRestDatasourceAdapter", () => {
       fetch: makeAbortFetch(),
     });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.retriable, false);
@@ -270,17 +353,32 @@ describe("createRestDatasourceAdapter", () => {
       frames: [
         {
           fields: [
-            { name: "cpu", type: "number", values: [50], labels: { host: "srv1", region: "us-east" } },
+            {
+              name: "cpu",
+              type: "number",
+              values: [50],
+              labels: { host: "srv1", region: "us-east" },
+            },
           ],
         },
       ],
     };
     const { fetchFn } = makeFetch(body);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
-    assert.deepEqual(result.frames[0].fields[0].labels, { host: "srv1", region: "us-east" });
+    assert.deepEqual(result.frames[0].fields[0].labels, {
+      host: "srv1",
+      region: "us-east",
+    });
   });
 
   // ---------------------------------------------------------------------------
@@ -294,9 +392,16 @@ describe("createRestDatasourceAdapter", () => {
       warnings: ["Rate limit approaching."],
     };
     const { fetchFn } = makeFetch(body);
-    const adapter = createRestDatasourceAdapter({ id: "metrics", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "cpu.usage", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "cpu.usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.deepEqual(result.warnings, ["Rate limit approaching."]);
   });

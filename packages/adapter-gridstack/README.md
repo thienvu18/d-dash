@@ -15,17 +15,15 @@ This package expects:
 import { createGridstackAdapter } from "@d-dash/adapter-gridstack";
 import { GridStack } from "gridstack";
 
-registry.registerGrid(
-	createGridstackAdapter({ GridStack }),
-);
+registry.registerGrid(createGridstackAdapter({ GridStack }));
 ```
 
 ## Target shape
 
 ```ts
 type GridstackTarget = {
-	el: HTMLElement;
-	onLayoutChange?: (changes: GridLayoutChange[]) => void;
+  el: HTMLElement;
+  onLayoutChange?: (changes: GridLayoutChange[]) => void;
 };
 ```
 

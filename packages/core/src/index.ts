@@ -1,9 +1,4 @@
-export type {
-  JsonArray,
-  JsonObject,
-  JsonPrimitive,
-  JsonValue,
-} from "./json";
+export type { JsonArray, JsonObject, JsonPrimitive, JsonValue } from "./json";
 
 export type { DDashError, DDashErrorCode } from "./errors";
 

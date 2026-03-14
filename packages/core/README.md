@@ -26,7 +26,7 @@ const runtime = createDashboardRuntime({ registry });
 
 const validation = runtime.validateDashboard(dashboard);
 if (!validation.ok) {
-	throw new Error("Invalid dashboard");
+  throw new Error("Invalid dashboard");
 }
 
 const session = runtime.createSession(dashboard);

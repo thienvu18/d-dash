@@ -7,16 +7,19 @@ This document defines contract boundaries, stability guarantees, and change rule
 d-dash uses three explicit contract layers:
 
 1. Persisted Schema Contract
+
 - Purpose: dashboard storage and interchange.
 - Format: JSON only.
 - Examples: dashboard definition, layout, widget intent, display metadata.
 
 2. Runtime Resolved Contract
+
 - Purpose: execution-ready model used by runtime orchestration.
 - Format: TypeScript runtime objects.
 - Examples: resolved timestamps, validated references, execution context.
 
 3. Adapter Contract
+
 - Purpose: extension interfaces for datasource, visualization, and grid adapters.
 - Format: TypeScript interfaces and result envelopes.
 - Examples: datasource query API, visualization lifecycle, grid event bridge.
@@ -28,16 +31,19 @@ Rule: no runtime-only fields are allowed in persisted schema.
 All exported APIs must be tagged as one of:
 
 1. Stable
+
 - Covered by semantic versioning guarantees.
 - Breaking changes only in major releases.
 - Must include migration guidance when changed.
 
 2. Experimental
+
 - May change in minor releases.
 - Not covered by full backward-compatibility guarantees.
 - Must be labeled clearly in docs and type comments.
 
 3. Internal
+
 - Not part of public API.
 - Can change without notice.
 - Must not be documented as extension points.

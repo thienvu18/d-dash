@@ -45,8 +45,17 @@ function createMockFetch() {
             frames: [
               {
                 fields: [
-                  { name: "time", type: "time", values: [payload.from, payload.to] },
-                  { name: "cpu.usage", type: "number", values: [41, 47], labels: { host: "srv-1" } },
+                  {
+                    name: "time",
+                    type: "time",
+                    values: [payload.from, payload.to],
+                  },
+                  {
+                    name: "cpu.usage",
+                    type: "number",
+                    values: [41, 47],
+                    labels: { host: "srv-1" },
+                  },
                 ],
               },
             ],
@@ -111,7 +120,9 @@ async function main() {
     }),
   );
 
-  for (const adapter of createEChartsAdapters({ echarts: createMockEChartsFactory() })) {
+  for (const adapter of createEChartsAdapters({
+    echarts: createMockEChartsFactory(),
+  })) {
     registry.registerVisualization(adapter);
   }
 
@@ -137,7 +148,12 @@ async function main() {
     now: () => 1_710_000_000_000,
     onEvent(event) {
       if (event.type === "widget.execute.failed") {
-        console.error("runtime event", event.type, event.widgetId, event.durationMs);
+        console.error(
+          "runtime event",
+          event.type,
+          event.widgetId,
+          event.durationMs,
+        );
       }
     },
   });
@@ -145,7 +161,9 @@ async function main() {
   const dashboard = makeDashboard();
   const validation = runtime.validateDashboard(dashboard);
   if (!validation.ok) {
-    throw new Error(`Dashboard invalid: ${validation.issues.map((i) => i.message).join("; ")}`);
+    throw new Error(
+      `Dashboard invalid: ${validation.issues.map((i) => i.message).join("; ")}`,
+    );
   }
 
   const session = runtime.createSession(dashboard);
@@ -161,7 +179,11 @@ async function main() {
     },
   };
   registry.requireGrid("gridstack").init(gridTarget);
-  await runtime.applyDashboardLayout({ session, gridId: "gridstack", target: gridTarget });
+  await runtime.applyDashboardLayout({
+    session,
+    gridId: "gridstack",
+    target: gridTarget,
+  });
 
   const queryResult = await runtime.executeWidget({
     session,

@@ -37,7 +37,10 @@ describe("createAdapterRegistry", () => {
     registry.registerGrid(makeGrid("gridstack"));
 
     assert.equal(registry.requireDatasource("metrics").id, "metrics");
-    assert.equal(registry.requireVisualization("timeseries").type, "timeseries");
+    assert.equal(
+      registry.requireVisualization("timeseries").type,
+      "timeseries",
+    );
     assert.equal(registry.requireGrid("gridstack").id, "gridstack");
   });
 

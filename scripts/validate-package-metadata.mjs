@@ -23,7 +23,9 @@ const requiredFields = [
   "engines",
 ];
 
-const packageDirs = readdirSync(join(process.cwd(), "packages"), { withFileTypes: true })
+const packageDirs = readdirSync(join(process.cwd(), "packages"), {
+  withFileTypes: true,
+})
   .filter((entry) => entry.isDirectory())
   .map((entry) => join(process.cwd(), "packages", entry.name));
 
@@ -40,7 +42,9 @@ for (const dir of packageDirs) {
     }
 
     if (pkg.private === true) {
-      failures.push(`${pkg.name ?? dir}: private must be false/omitted for publishing`);
+      failures.push(
+        `${pkg.name ?? dir}: private must be false/omitted for publishing`,
+      );
     }
   } catch {
     failures.push(`${dir}: package.json missing or invalid`);
@@ -48,7 +52,10 @@ for (const dir of packageDirs) {
 }
 
 if (failures.length > 0) {
-  console.error("Package metadata validation failed:\n" + failures.map((x) => `- ${x}`).join("\n"));
+  console.error(
+    "Package metadata validation failed:\n" +
+      failures.map((x) => `- ${x}`).join("\n"),
+  );
   process.exit(1);
 }
 

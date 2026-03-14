@@ -60,7 +60,9 @@ for (const pkgDir of getPackageDirs()) {
 }
 
 if (missing.length > 0) {
-  console.error("Export verification failed:\n" + missing.map((x) => `- ${x}`).join("\n"));
+  console.error(
+    "Export verification failed:\n" + missing.map((x) => `- ${x}`).join("\n"),
+  );
   process.exit(1);
 }
 

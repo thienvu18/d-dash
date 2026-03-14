@@ -39,22 +39,38 @@ function makeFailingFetch(error) {
 
 describe("createVictoriaMetricsDatasourceAdapter", () => {
   test("adapter id matches options.id", () => {
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+    });
     assert.equal(adapter.id, "vm");
   });
 
   test("adapter declares metadata discovery capability", () => {
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+    });
     assert.equal(adapter.capabilities?.supportsMetadataDiscovery, true);
   });
 
   test("getMetrics reads metric names from VictoriaMetrics discovery endpoint", async () => {
-    const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: ["up", "cpu_usage"] });
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
+    const { fetchFn, getLastRequest } = makeFetch({
+      status: "success",
+      data: ["up", "cpu_usage"],
+    });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
     const metrics = await adapter.getMetrics();
 
-    assert.equal(getLastRequest().url, `${BASE_URL}/api/v1/label/__name__/values`);
+    assert.equal(
+      getLastRequest().url,
+      `${BASE_URL}/api/v1/label/__name__/values`,
+    );
     assert.equal(metrics.length, 2);
     assert.equal(metrics[0].id, "up");
     assert.equal(metrics[0].datasource, "vm");
@@ -62,7 +78,11 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
 
   test("getMetrics returns empty array when discovery endpoint errors", async () => {
     const { fetchFn } = makeFetch({}, { ok: false, status: 500 });
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
     const metrics = await adapter.getMetrics();
 
@@ -70,7 +90,10 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
   });
 
   test("range query uses /api/v1/query_range and includes start/end/step", async () => {
-    const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: { resultType: "matrix", result: [] } });
+    const { fetchFn, getLastRequest } = makeFetch({
+      status: "success",
+      data: { resultType: "matrix", result: [] },
+    });
     const adapter = createVictoriaMetricsDatasourceAdapter({
       id: "vm",
       baseUrl: BASE_URL,
@@ -78,7 +101,10 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
       fetch: fetchFn,
     });
 
-    await adapter.query({ metric: "up", timeRange: makeTimeRange() }, makeContext());
+    await adapter.query(
+      { metric: "up", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     const req = getLastRequest();
     assert.equal(req.url, `${BASE_URL}/api/v1/query_range`);
@@ -91,14 +117,24 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
   });
 
   test("instant query mode uses /api/v1/query and includes time", async () => {
-    const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: { resultType: "vector", result: [] } });
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
+    const { fetchFn, getLastRequest } = makeFetch({
+      status: "success",
+      data: { resultType: "vector", result: [] },
+    });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    await adapter.query({
-      metric: "up",
-      timeRange: makeTimeRange(),
-      filters: { mode: "instant" },
-    }, makeContext());
+    await adapter.query(
+      {
+        metric: "up",
+        timeRange: makeTimeRange(),
+        filters: { mode: "instant" },
+      },
+      makeContext(),
+    );
 
     const req = getLastRequest();
     assert.equal(req.url, `${BASE_URL}/api/v1/query`);
@@ -109,7 +145,10 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
   });
 
   test("filters.step overrides default step", async () => {
-    const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: { resultType: "matrix", result: [] } });
+    const { fetchFn, getLastRequest } = makeFetch({
+      status: "success",
+      data: { resultType: "matrix", result: [] },
+    });
     const adapter = createVictoriaMetricsDatasourceAdapter({
       id: "vm",
       baseUrl: BASE_URL,
@@ -117,11 +156,14 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
       fetch: fetchFn,
     });
 
-    await adapter.query({
-      metric: "up",
-      timeRange: makeTimeRange(),
-      filters: { step: "15s" },
-    }, makeContext());
+    await adapter.query(
+      {
+        metric: "up",
+        timeRange: makeTimeRange(),
+        filters: { step: "15s" },
+      },
+      makeContext(),
+    );
 
     const body = JSON.parse(getLastRequest().init.body);
     assert.equal(body.step, "15s");
@@ -135,24 +177,40 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
         result: [
           {
             metric: { __name__: "cpu_usage", host: "srv1" },
-            values: [[1710000000, "10"], [1710000060, "20"]],
+            values: [
+              [1710000000, "10"],
+              [1710000060, "20"],
+            ],
           },
         ],
       },
     });
 
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
-    const result = await adapter.query({ metric: "cpu_usage", timeRange: makeTimeRange() }, makeContext());
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+    const result = await adapter.query(
+      { metric: "cpu_usage", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "success");
     assert.equal(result.frames.length, 1);
     assert.equal(result.frames[0].fields[0].name, "time");
     assert.equal(result.frames[0].fields[0].type, "time");
-    assert.deepEqual(result.frames[0].fields[0].values, [1710000000000, 1710000060000]);
+    assert.deepEqual(
+      result.frames[0].fields[0].values,
+      [1710000000000, 1710000060000],
+    );
     assert.equal(result.frames[0].fields[1].name, "cpu_usage");
     assert.equal(result.frames[0].fields[1].type, "number");
     assert.deepEqual(result.frames[0].fields[1].values, [10, 20]);
-    assert.deepEqual(result.frames[0].fields[1].labels, { __name__: "cpu_usage", host: "srv1" });
+    assert.deepEqual(result.frames[0].fields[1].labels, {
+      __name__: "cpu_usage",
+      host: "srv1",
+    });
   });
 
   test("vector response normalizes to single-point frames", async () => {
@@ -169,12 +227,19 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
       },
     });
 
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
-    const result = await adapter.query({
-      metric: "up",
-      timeRange: makeTimeRange(),
-      filters: { mode: "instant" },
-    }, makeContext());
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+    const result = await adapter.query(
+      {
+        metric: "up",
+        timeRange: makeTimeRange(),
+        filters: { mode: "instant" },
+      },
+      makeContext(),
+    );
 
     assert.equal(result.status, "success");
     assert.equal(result.frames[0].fields[0].values[0], 1710000000000);
@@ -183,9 +248,16 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
 
   test("http error maps to DATASOURCE_HTTP_ERROR", async () => {
     const { fetchFn } = makeFetch({}, { ok: false, status: 503 });
-    const adapter = createVictoriaMetricsDatasourceAdapter({ id: "vm", baseUrl: BASE_URL, fetch: fetchFn });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
 
-    const result = await adapter.query({ metric: "up", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "up", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_HTTP_ERROR");
@@ -199,7 +271,10 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
       fetch: makeFailingFetch(new Error("ECONNRESET")),
     });
 
-    const result = await adapter.query({ metric: "up", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "up", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_QUERY_FAILED");
@@ -210,10 +285,15 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
     const adapter = createVictoriaMetricsDatasourceAdapter({
       id: "vm",
       baseUrl: BASE_URL,
-      fetch: makeFailingFetch(Object.assign(new Error("aborted"), { name: "AbortError" })),
+      fetch: makeFailingFetch(
+        Object.assign(new Error("aborted"), { name: "AbortError" }),
+      ),
     });
 
-    const result = await adapter.query({ metric: "up", timeRange: makeTimeRange() }, makeContext());
+    const result = await adapter.query(
+      { metric: "up", timeRange: makeTimeRange() },
+      makeContext(),
+    );
 
     assert.equal(result.status, "error");
     assert.equal(result.error.code, "DATASOURCE_QUERY_FAILED");

@@ -16,7 +16,7 @@ import * as echarts from "echarts";
 import { createEChartsAdapters } from "@d-dash/adapter-echarts";
 
 for (const adapter of createEChartsAdapters({ echarts })) {
-	registry.registerVisualization(adapter);
+  registry.registerVisualization(adapter);
 }
 ```
 
@@ -34,8 +34,8 @@ container. You can provide a stricter sanitizer:
 
 ```ts
 const adapters = createEChartsAdapters({
-	echarts,
-	sanitizeHtml: (rawHtml) => mySanitizer(rawHtml),
+  echarts,
+  sanitizeHtml: (rawHtml) => mySanitizer(rawHtml),
 });
 ```
 
@@ -43,7 +43,7 @@ const adapters = createEChartsAdapters({
 
 ```ts
 type EChartsTarget = {
-	el: HTMLElement;
-	theme?: string;
+  el: HTMLElement;
+  theme?: string;
 };
 ```
