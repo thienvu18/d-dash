@@ -49,6 +49,16 @@ export async function executeWidgetQuery(
 ): Promise<DatasourceQueryResult> {
   const adapter = registry.requireDatasource(request.datasourceId);
 
+  if (request.query.filters && adapter.capabilities?.supportsAdHocFilters === false) {
+    throw new CapabilityMismatchException(
+      "Datasource adapter does not support ad-hoc filters.",
+      {
+        datasourceId: request.datasourceId,
+        widgetId: request.widgetId,
+      },
+    );
+  }
+
   const queryRequest: DatasourceQueryRequest = {
     metric: request.query.metric,
     timeRange: request.resolvedTimeRange,

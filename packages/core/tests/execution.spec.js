@@ -174,6 +174,36 @@ describe("executeWidgetQuery", () => {
       /must include a structured error/,
     );
   });
+
+  test("throws when datasource capability rejects ad-hoc filters", async () => {
+    const registry = createAdapterRegistry();
+
+    registry.registerDatasource({
+      id: "metrics",
+      capabilities: {
+        supportsAdHocFilters: false,
+      },
+      async query() {
+        return {
+          status: "success",
+          frames: [],
+        };
+      },
+    });
+
+    await assert.rejects(
+      executeWidgetQuery(registry, {
+        dashboardId: "system-overview",
+        widgetId: "w1",
+        datasourceId: "metrics",
+        query: { metric: "cpu.usage", filters: { host: "api-1" } },
+        visualization: { type: "timeseries" },
+        resolvedTimeRange: { from: 100, to: 200, source: "dashboard" },
+        context: { traceId: "trace-6b" },
+      }),
+      /does not support ad-hoc filters/,
+    );
+  });
 });
 
 describe("executeWidgetRender", () => {

@@ -22,6 +22,16 @@ export type {
 } from "./schema";
 
 export type {
+  MigrationResult,
+  VersionedPersistedDashboard,
+} from "./migrations";
+
+export {
+  LATEST_SCHEMA_VERSION,
+  migratePersistedDashboard,
+} from "./migrations.js";
+
+export type {
   ResolvedTimeRange,
   ResolvedWidgetExecutionRequest,
   RuntimeContext,
