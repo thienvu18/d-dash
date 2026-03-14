@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "description": "Contract-first embeddable dashboard engine",
-  "license": "MIT",
+  "license": "LGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "https://github.com/thienvu18/d-dash.git"
@@ -23,6 +23,8 @@
     "build:release": "npm run clean && npm run build:packages && npm run verify:exports",
     "test": "npm run -w @d-dash/core test && npm run -w @d-dash/adapter-echarts test && npm run -w @d-dash/adapter-gridstack test && npm run -w @d-dash/datasource-rest test && npm run -w @d-dash/datasource-victoriametrics test && npm run -w @d-dash/datasource-grpc test",
     "typecheck": "npm run build:packages",
+    "lint": "eslint . --ext .ts,.js,.mjs,.cjs",
+    "lint:fix": "eslint . --ext .ts,.js,.mjs,.cjs --fix",
     "docs:api": "typedoc",
     "verify:exports": "node scripts/verify-exports.mjs",
     "release:check:metadata": "node scripts/validate-package-metadata.mjs",
@@ -32,6 +34,9 @@
     "release:publish": "npm run release:prepare && node scripts/publish-packages.mjs publish"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.28.0",
+    "@typescript-eslint/parser": "^8.28.0",
+    "eslint": "^8.57.1",
     "typedoc": "^0.28.0",
     "typescript": "^5.9.3"
   }
