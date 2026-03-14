@@ -1,0 +1,19 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": [
+    "packages/core/src/index.ts",
+    "packages/adapter-echarts/src/index.ts",
+    "packages/adapter-gridstack/src/index.ts",
+    "packages/datasource-rest/src/index.ts",
+    "packages/datasource-victoriametrics/src/index.ts",
+    "packages/datasource-grpc/src/index.ts"
+  ],
+  "entryPointStrategy": "resolve",
+  "out": "docs/api",
+  "excludePrivate": true,
+  "excludeProtected": true,
+  "excludeInternal": true,
+  "plugin": [],
+  "readme": "none",
+  "tsconfig": "tsconfig.base.json"
+}

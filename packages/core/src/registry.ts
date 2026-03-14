@@ -6,12 +6,15 @@ import type {
 import type { DDashError } from "./errors";
 import type { VisualizationKind } from "./schema";
 
+/** Registry behavior for handling duplicate adapter identifiers. */
 export type RegistryDuplicatePolicy = "reject" | "replace";
 
+/** Configuration options for creating an adapter registry. */
 export type RegistryOptions = {
   duplicatePolicy?: RegistryDuplicatePolicy;
 };
 
+/** Runtime registry contract for datasource, visualization, and grid adapters. */
 export interface AdapterRegistry {
   registerDatasource(adapter: DatasourceAdapter): void;
   registerVisualization(adapter: VisualizationAdapter): void;
@@ -30,6 +33,7 @@ export interface AdapterRegistry {
   requireGrid(id: string): GridAdapter;
 }
 
+/** Registry-level structured error envelope. */
 export type RegistryError = DDashError & {
   code: "REGISTRY_DUPLICATE_ADAPTER" | "REGISTRY_ADAPTER_NOT_FOUND";
 };

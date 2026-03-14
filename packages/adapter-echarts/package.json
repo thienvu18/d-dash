@@ -1,7 +1,8 @@
 {
   "name": "@d-dash/adapter-echarts",
   "version": "0.1.0",
-  "private": true,
+  "description": "ECharts visualization adapters for d-dash",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,7 +20,24 @@
     "@d-dash/core": "^0.1.0",
     "echarts": ">=5.0.0"
   },
+  "keywords": [
+    "dashboard",
+    "echarts",
+    "adapter",
+    "d-dash"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
+    "@d-dash/core": "file:../core",
     "typescript": "^5.9.3"
   }
 }

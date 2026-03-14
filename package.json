@@ -9,10 +9,21 @@
     "examples/*"
   ],
   "scripts": {
-    "build": "echo \"Build scripts will be added in later slices\"",
-    "test": "echo \"Test scripts will be added in later slices\""
+    "clean": "node scripts/clean-dist.mjs",
+    "build": "npm run build:release",
+    "build:packages": "npm run -w @d-dash/core build && npm run -w @d-dash/adapter-echarts build && npm run -w @d-dash/adapter-gridstack build && npm run -w @d-dash/datasource-rest build && npm run -w @d-dash/datasource-victoriametrics build && npm run -w @d-dash/datasource-grpc build",
+    "build:release": "npm run clean && npm run build:packages && npm run verify:exports",
+    "test": "npm run -w @d-dash/core test && npm run -w @d-dash/adapter-echarts test && npm run -w @d-dash/adapter-gridstack test && npm run -w @d-dash/datasource-rest test && npm run -w @d-dash/datasource-victoriametrics test && npm run -w @d-dash/datasource-grpc test",
+    "typecheck": "npm run build:packages",
+    "docs:api": "typedoc",
+    "verify:exports": "node scripts/verify-exports.mjs",
+    "release:check:metadata": "node scripts/validate-package-metadata.mjs",
+    "release:check:versions": "node scripts/validate-version-consistency.mjs",
+    "release:prepare": "npm run build:release && npm run test && npm run docs:api && npm run release:check:metadata && npm run release:check:versions",
+    "release:dry-run": "npm run release:prepare && npm pack --dry-run"
   },
   "devDependencies": {
+    "typedoc": "^0.28.0",
     "typescript": "^5.9.3"
   }
 }

@@ -1,6 +1,7 @@
 import type { DDashError } from "./errors";
 import type { MetricDefinition, PersistedDashboard, PersistedTimeRange } from "./schema";
 
+/** Stable validation issue codes produced by dashboard schema validation. */
 export type ValidationIssueCode =
   | "SCHEMA_UNSUPPORTED_VERSION"
   | "REQUIRED_FIELD_MISSING"
@@ -13,17 +14,20 @@ export type ValidationIssueCode =
   | "METRIC_NOT_FOUND"
   | "METRIC_VISUALIZATION_MISMATCH";
 
+/** Single dashboard validation issue entry. */
 export type ValidationIssue = {
   code: ValidationIssueCode;
   path: string;
   message: string;
 };
 
+/** Aggregated result returned by dashboard validation. */
 export type ValidationResult = {
   ok: boolean;
   issues: ValidationIssue[];
 };
 
+/** Optional registry and policy inputs for dashboard validation. */
 export type DashboardValidationOptions = {
   knownDatasources?: readonly string[];
   knownVisualizations?: readonly string[];
@@ -31,6 +35,10 @@ export type DashboardValidationOptions = {
   allowUnknownMetrics?: boolean;
 };
 
+/**
+ * Validates persisted dashboard contracts and optional runtime-registered references.
+ * Returns a deterministic list of issues without throwing.
+ */
 export function validatePersistedDashboard(
   dashboard: PersistedDashboard,
   options: DashboardValidationOptions = {},
@@ -198,6 +206,10 @@ export function validatePersistedDashboard(
   };
 }
 
+/**
+ * Converts validation issues into a standardized `SCHEMA_INVALID` structured error.
+ * Returns `undefined` when validation passed.
+ */
 export function toSchemaValidationError(result: ValidationResult): DDashError | undefined {
   if (result.ok) {
     return undefined;

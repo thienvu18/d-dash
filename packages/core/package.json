@@ -1,7 +1,8 @@
 {
   "name": "@d-dash/core",
   "version": "0.1.0",
-  "private": true,
+  "description": "Headless core runtime and contracts for d-dash",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -14,5 +15,21 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test tests/**/*.spec.js"
+  },
+  "keywords": [
+    "dashboard",
+    "runtime",
+    "contracts",
+    "d-dash"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

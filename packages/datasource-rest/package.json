@@ -1,7 +1,8 @@
 {
   "name": "@d-dash/datasource-rest",
   "version": "0.1.0",
-  "private": true,
+  "description": "REST datasource adapter for d-dash",
+  "license": "MIT",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -18,7 +19,24 @@
   "peerDependencies": {
     "@d-dash/core": "^0.1.0"
   },
+  "keywords": [
+    "dashboard",
+    "datasource",
+    "rest",
+    "d-dash"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "devDependencies": {
+    "@d-dash/core": "file:../core",
     "typescript": "^5.9.3"
   }
 }

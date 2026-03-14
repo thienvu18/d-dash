@@ -1,5 +1,6 @@
 import type { JsonObject } from "./json";
 
+/** Stable machine-readable error codes used in public d-dash contracts. */
 export type DDashErrorCode =
   | "SCHEMA_INVALID"
   | "SCHEMA_UNSUPPORTED_VERSION"
@@ -15,9 +16,14 @@ export type DDashErrorCode =
   | "VISUALIZATION_RENDER_FAILED"
   | "GRID_LAYOUT_FAILED";
 
+/** Standard structured error envelope used across runtime and adapters. */
 export type DDashError = {
+  /** Stable machine-readable error code. */
   code: DDashErrorCode;
+  /** Human-readable summary suitable for logs and UIs. */
   message: string;
+  /** Optional structured diagnostics for operators and tooling. */
   details?: JsonObject;
+  /** Optional retryability hint for callers/orchestrators. */
   retriable?: boolean;
 };

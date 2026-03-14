@@ -15,6 +15,7 @@ import {
 } from "./runtime.js";
 import type { PersistedWidget } from "./schema";
 
+/** Inputs required to build a resolved widget execution request. */
 export type BuildWidgetExecutionRequestInput = {
   dashboardId: string;
   widget: PersistedWidget;
@@ -23,12 +24,14 @@ export type BuildWidgetExecutionRequestInput = {
   now?: number;
 };
 
+/** Inputs required to execute a visualization render call. */
 export type ExecuteWidgetRenderInput<TTarget = unknown> = {
   request: ResolvedWidgetExecutionRequest;
   frames: DataFrame[];
   target: TTarget;
 };
 
+/** Full inputs required for query + render orchestration of a widget. */
 export type ExecuteWidgetInput<TTarget = unknown> = {
   registry: AdapterRegistry;
   dashboardId: string;
@@ -39,6 +42,7 @@ export type ExecuteWidgetInput<TTarget = unknown> = {
   now?: number;
 };
 
+/** Executes datasource query for a resolved widget request. */
 export async function executeWidgetQuery(
   registry: AdapterRegistry,
   request: ResolvedWidgetExecutionRequest,
@@ -56,6 +60,7 @@ export async function executeWidgetQuery(
   return result;
 }
 
+/** Executes visualization render for a resolved widget request and frames. */
 export async function executeWidgetRender<TTarget = unknown>(
   registry: AdapterRegistry,
   input: ExecuteWidgetRenderInput<TTarget>,
@@ -73,6 +78,7 @@ export async function executeWidgetRender<TTarget = unknown>(
   await adapter.render(renderRequest, input.target);
 }
 
+/** Executes full widget flow: build request, query datasource, and render when data exists. */
 export async function executeWidget<TTarget = unknown>(
   input: ExecuteWidgetInput<TTarget>,
 ): Promise<DatasourceQueryResult> {
@@ -99,6 +105,7 @@ export async function executeWidget<TTarget = unknown>(
   return result;
 }
 
+/** Builds a resolved widget execution request from persisted widget and runtime context. */
 export function buildWidgetExecutionRequest(
   input: BuildWidgetExecutionRequestInput,
 ): ResolvedWidgetExecutionRequest {

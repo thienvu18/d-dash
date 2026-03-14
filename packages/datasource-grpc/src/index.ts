@@ -11,6 +11,7 @@ import type {
   VisualizationKind,
 } from "@d-dash/core";
 
+/** Wire-format query envelope forwarded to gRPC datasource backends. */
 export type GrpcQueryEnvelope = {
   metric: string;
   from: number;
@@ -21,6 +22,7 @@ export type GrpcQueryEnvelope = {
   };
 };
 
+/** Wire-format field returned by gRPC datasource backends. */
 export type GrpcField = {
   name: string;
   type: "time" | "number" | "string" | "boolean";
@@ -28,10 +30,12 @@ export type GrpcField = {
   labels?: Record<string, string>;
 };
 
+/** Wire-format frame returned by gRPC datasource backends. */
 export type GrpcFrame = {
   fields: GrpcField[];
 };
 
+/** Wire-format top-level response envelope returned by gRPC datasource backends. */
 export type GrpcResponseEnvelope = {
   status: "success" | "partial" | "error";
   frames: GrpcFrame[];
@@ -43,6 +47,7 @@ export type GrpcResponseEnvelope = {
   };
 };
 
+/** Wire-format metric definition shape returned by optional discovery APIs. */
 export type GrpcMetricWire =
   | string
   | {
@@ -52,11 +57,13 @@ export type GrpcMetricWire =
       supportedVisualizations?: VisualizationKind[];
     };
 
+/** Transport client contract injected into the gRPC datasource adapter. */
 export type GrpcDatasourceClient = {
   query(request: GrpcQueryEnvelope, context: RuntimeContext): Promise<GrpcResponseEnvelope>;
   getMetrics?(): Promise<GrpcMetricWire[]>;
 };
 
+/** Configuration options for creating the gRPC datasource adapter. */
 export type GrpcDatasourceAdapterOptions = {
   id: string;
   client: GrpcDatasourceClient;
@@ -133,6 +140,7 @@ const BASE_CAPABILITIES: DatasourceCapabilities = {
   supportsAdHocFilters: true,
 };
 
+/** Creates a d-dash datasource adapter backed by an injected gRPC client. */
 export function createGrpcDatasourceAdapter(
   options: GrpcDatasourceAdapterOptions,
 ): DatasourceAdapter {

@@ -38,6 +38,7 @@ export type RuntimeEvent =
 
 export type RuntimeEventHandler = (event: RuntimeEvent) => void;
 
+/** Options for creating dashboard runtime orchestration. */
 export type DashboardRuntimeOptions = {
   registry: AdapterRegistry;
   now?: () => number;
@@ -45,12 +46,14 @@ export type DashboardRuntimeOptions = {
   onEvent?: RuntimeEventHandler;
 };
 
+/** Execution session state derived from a validated dashboard. */
 export type DashboardSession = {
   dashboard: PersistedDashboard;
   dashboardTimeRange: ResolvedTimeRange;
   widgets: PersistedWidget[];
 };
 
+/** Inputs for executing a single widget in a session. */
 export type ExecuteSessionWidgetInput<TTarget = unknown> = {
   session: DashboardSession;
   widgetId: string;
@@ -58,33 +61,39 @@ export type ExecuteSessionWidgetInput<TTarget = unknown> = {
   context: RuntimeContext;
 };
 
+/** Inputs for executing all widgets in a session. */
 export type ExecuteAllWidgetsInput<TTarget = unknown> = {
   session: DashboardSession;
   targetByWidgetId: Record<string, TTarget>;
   context: RuntimeContext;
 };
 
+/** Widget execution result tuple for batch execution APIs. */
 export type ExecuteWidgetResult = {
   widgetId: string;
   result: DatasourceQueryResult;
 };
 
+/** Preflight result for adapter availability checks. */
 export type DashboardPreflightResult = {
   ok: boolean;
   missingDatasources: string[];
   missingVisualizations: string[];
 };
 
+/** Inputs for applying persisted dashboard layout through a grid adapter. */
 export type ApplyDashboardLayoutInput<TTarget = unknown> = {
   session: DashboardSession;
   gridId: string;
   target: TTarget;
 };
 
+/** Structured runtime error union thrown by dashboard runtime APIs. */
 export type DashboardRuntimeError = DDashError & {
   code: "SCHEMA_INVALID" | "RUNTIME_WIDGET_NOT_FOUND" | "RUNTIME_TARGET_MISSING";
 };
 
+/** Public dashboard runtime API surface. */
 export type DashboardRuntime = {
   validateDashboard(
     dashboard: PersistedDashboard,
@@ -106,6 +115,7 @@ export type DashboardRuntime = {
   discoverMetrics(datasourceId?: string): Promise<MetricDefinition[]>;
 };
 
+/** Creates dashboard runtime orchestrator bound to adapter registry and clock/event hooks. */
 export function createDashboardRuntime(options: DashboardRuntimeOptions): DashboardRuntime {
   const getNow = options.now ?? Date.now;
 

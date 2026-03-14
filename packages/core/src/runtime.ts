@@ -1,12 +1,14 @@
 import type { JsonObject } from "./json";
 import type { PersistedWidget, WidgetQuery, WidgetVisualization } from "./schema";
 
+/** Fully resolved absolute time range used for execution. */
 export type ResolvedTimeRange = {
   from: number;
   to: number;
   source: "dashboard" | "widget";
 };
 
+/** Runtime context forwarded through query and render paths. */
 export type RuntimeContext = {
   traceId: string;
   featureFlags?: Record<string, boolean>;
@@ -15,6 +17,7 @@ export type RuntimeContext = {
   };
 };
 
+/** Execution-ready widget request built from persisted and resolved contracts. */
 export type ResolvedWidgetExecutionRequest = {
   dashboardId: string;
   widgetId: string;
@@ -26,10 +29,12 @@ export type ResolvedWidgetExecutionRequest = {
   context: RuntimeContext;
 };
 
+/** Runtime widget view model with effective time range. */
 export type RuntimeWidget = PersistedWidget & {
   effectiveTimeRange: ResolvedTimeRange;
 };
 
+/** Time-range resolution error contract. */
 export type TimeRangeResolveError = {
   code: "TIME_RANGE_RESOLVE_FAILED";
   message: string;
@@ -37,6 +42,7 @@ export type TimeRangeResolveError = {
   retriable?: boolean;
 };
 
+/** Optional controls for time-range resolution. */
 export type TimeResolveOptions = {
   now?: number;
 };
@@ -53,6 +59,9 @@ class TimeRangeResolveException extends Error implements TimeRangeResolveError {
   }
 }
 
+/**
+ * Resolves dashboard-level time range input into absolute epoch millisecond bounds.
+ */
 export function resolveDashboardTimeRange(
   input: { type: "relative"; value: string } | { type: "absolute"; from: number; to: number },
   options: TimeResolveOptions = {},
@@ -81,6 +90,10 @@ export function resolveDashboardTimeRange(
   };
 }
 
+/**
+ * Resolves widget-level time range by honoring inherit/relative/absolute modes.
+ * When `inherit` (or undefined), the dashboard-resolved range is returned.
+ */
 export function resolveWidgetTimeRange(
   widgetTimeRange: { type: "inherit" } | { type: "relative"; value: string } | { type: "absolute"; from: number; to: number } | undefined,
   dashboardResolvedTimeRange: ResolvedTimeRange,
