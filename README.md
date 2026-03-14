@@ -57,7 +57,13 @@ Output is written to `docs/api`.
 ```bash
 npm run release:prepare
 npm run release:dry-run
+npm run release:publish
 ```
+
+GitHub Actions:
+
+- `CI` runs `release:prepare` on push and pull requests.
+- `Publish Packages` supports manual dry-run and publish via workflow dispatch.
 
 ## Contributing
 

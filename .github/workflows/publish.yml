@@ -1,0 +1,41 @@
+name: Publish Packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Run dry-run publish only"
+        required: true
+        default: "true"
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          registry-url: https://registry.npmjs.org
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare release
+        run: npm run release:prepare
+
+      - name: Dry-run publish
+        if: ${{ inputs.dry_run == 'true' }}
+        run: node scripts/publish-packages.mjs dry-run
+
+      - name: Publish packages
+        if: ${{ inputs.dry_run != 'true' }}
+        run: node scripts/publish-packages.mjs publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
