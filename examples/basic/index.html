@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>d-dash Browser Demo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@12.3.3/dist/gridstack.min.css" />
+    <link rel="stylesheet" href="./src/browser/styles.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "@d-dash/core": "../../packages/core/dist/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <h1>d-dash Browser Demo</h1>
+        <p>Real gridstack + ECharts integration through d-dash adapters.</p>
+        <p id="app-state" class="status">Loading...</p>
+      </header>
+
+      <section class="board">
+        <div id="grid-root" class="grid-stack">
+          <div class="grid-stack-item" gs-id="w1">
+            <div class="grid-stack-item-content card">
+              <div id="widget-chart" class="chart"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./src/browser/main.js"></script>
+  </body>
+</html>

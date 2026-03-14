@@ -1,0 +1,18 @@
+{
+  "name": "d-dash",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Contract-first embeddable dashboard engine",
+  "license": "MIT",
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
+  "scripts": {
+    "build": "echo \"Build scripts will be added in later slices\"",
+    "test": "echo \"Test scripts will be added in later slices\""
+  },
+  "devDependencies": {
+    "typescript": "^5.9.3"
+  }
+}
