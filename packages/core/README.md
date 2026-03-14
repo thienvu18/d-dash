@@ -30,6 +30,17 @@ if (!validation.ok) {
 }
 
 const session = runtime.createSession(dashboard);
+
+const unbind = await runtime.bindLayoutResize({
+  session,
+  gridId: "gridstack",
+  gridTarget,
+  resolveTargetByWidgetId(widgetId) {
+    return widgetTargetById[widgetId];
+  },
+});
+
+// call unbind() on teardown
 ```
 
 See root documentation for full integration details.

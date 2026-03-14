@@ -22,7 +22,7 @@ d-dash uses three explicit contract layers:
 
 - Purpose: extension interfaces for datasource, visualization, and grid adapters.
 - Format: TypeScript interfaces and result envelopes.
-- Examples: datasource query API, visualization lifecycle, grid event bridge.
+- Examples: datasource query API, visualization lifecycle, grid layout-change subscription.
 
 Rule: no runtime-only fields are allowed in persisted schema.
 
@@ -101,6 +101,12 @@ Any stable contract change must include:
 2. Adapters own library-specific behavior.
 3. Host app owns framework-specific mounting and lifecycle orchestration.
 4. Internal runtime objects are not valid extension points.
+
+Practical implication for resize handling:
+
+1. Grid adapters should expose normalized layout changes through core grid contracts.
+2. Runtime may orchestrate grid-change to visualization `resize(...)` calls.
+3. DOM-specific strategies (for example ResizeObserver timing) remain in host/adapters.
 
 ## 9. Open-Source Governance for Contracts
 

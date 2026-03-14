@@ -69,9 +69,27 @@ Recommended host lifecycle:
 
 1. mount dashboard
 2. mount widgets
-3. subscribe to resize/layout events
-4. call adapter resize or update as needed
+3. bind grid layout changes to visualization resize via runtime
+4. call adapter resize directly only for host-specific events
 5. destroy adapters on unmount
+
+Preferred runtime bridge:
+
+```ts
+const unbind = await runtime.bindLayoutResize({
+  session,
+  gridId: "gridstack",
+  gridTarget,
+  resolveTargetByWidgetId(widgetId) {
+    return widgetTargetById.get(widgetId);
+  },
+});
+
+// later on unmount
+unbind();
+```
+
+This keeps host wiring thin while preserving headless core boundaries.
 
 ## 6. Refresh and Time Range Behavior
 
