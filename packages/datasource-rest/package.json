@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "description": "REST datasource adapter for d-dash",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thienvu18/d-dash.git",
+    "directory": "packages/datasource-rest"
+  },
+  "bugs": {
+    "url": "https://github.com/thienvu18/d-dash/issues"
+  },
+  "homepage": "https://github.com/thienvu18/d-dash/tree/main/packages/datasource-rest#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",

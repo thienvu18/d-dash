@@ -4,6 +4,14 @@
   "version": "0.0.0",
   "description": "Contract-first embeddable dashboard engine",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/thienvu18/d-dash.git"
+  },
+  "bugs": {
+    "url": "https://github.com/thienvu18/d-dash/issues"
+  },
+  "homepage": "https://github.com/thienvu18/d-dash#readme",
   "workspaces": [
     "packages/*",
     "examples/*"
@@ -20,7 +28,7 @@
     "release:check:metadata": "node scripts/validate-package-metadata.mjs",
     "release:check:versions": "node scripts/validate-version-consistency.mjs",
     "release:prepare": "npm run build:release && npm run test && npm run docs:api && npm run release:check:metadata && npm run release:check:versions",
-    "release:dry-run": "npm run release:prepare && npm pack --dry-run"
+    "release:dry-run": "npm run release:prepare && node scripts/publish-dry-run-packages.mjs"
   },
   "devDependencies": {
     "typedoc": "^0.28.0",

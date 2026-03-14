@@ -5,7 +5,23 @@ function readJson(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
 
-const requiredFields = ["name", "version", "description", "license", "type", "main", "types", "exports", "files", "keywords", "publishConfig", "engines"];
+const requiredFields = [
+  "name",
+  "version",
+  "description",
+  "license",
+  "repository",
+  "bugs",
+  "homepage",
+  "type",
+  "main",
+  "types",
+  "exports",
+  "files",
+  "keywords",
+  "publishConfig",
+  "engines",
+];
 
 const packageDirs = readdirSync(join(process.cwd(), "packages"), { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
