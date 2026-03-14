@@ -22,3 +22,8 @@ Thanks for contributing to d-dash.
 2. Include test evidence for behavior changes.
 3. Mention migration impact for stable contract changes.
 4. Keep public API and docs aligned.
+
+## Release process
+
+Maintainers should follow `docs/RELEASE.md` for validation, dry-run publish,
+and publish workflow details.

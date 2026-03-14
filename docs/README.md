@@ -17,5 +17,6 @@ Reference docs:
 - `USAGE.md`: host app integration path
 - `PLUGIN_DEVELOPMENT.md`: adapter authoring guidance and conformance
 - `CODE_RULES.md`: coding, testing, and security guardrails
+- `RELEASE.md`: release preparation and package publishing runbook
 
 Generated API docs are emitted to `docs/api` using `npm run docs:api`.
