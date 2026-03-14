@@ -187,10 +187,7 @@ async function main() {
 
   const session = runtime.createSession(dashboard);
   logEvent("createSession: completed");
-
-  const widgetTargets = {
-    w1: { el: widgetHostEl },
-  };
+  const widgetTarget = { el: widgetHostEl };
 
   const timeseriesAdapter = registry.requireVisualization("timeseries");
   const resizeObserver = new ResizeObserver(() => {
@@ -208,7 +205,9 @@ async function main() {
     session,
     gridId: "gridstack",
     gridTarget,
-    targetByWidgetId: widgetTargets,
+    resolveTargetByWidgetId(widgetId) {
+      return widgetId === "w1" ? widgetTarget : undefined;
+    },
   });
   logEvent("bindLayoutResize: grid layout changes now trigger visualization resize");
 
@@ -225,7 +224,7 @@ async function main() {
   const result = await runtime.executeWidget({
     session,
     widgetId: "w1",
-    target: widgetTargets.w1,
+    target: widgetTarget,
     context: { traceId: "trace-browser-demo" },
   });
 

@@ -98,7 +98,10 @@ export type BindLayoutResizeInput<
   session: DashboardSession;
   gridId: string;
   gridTarget: TGridTarget;
-  targetByWidgetId: Record<string, TWidgetTarget>;
+  targetByWidgetId?: Record<string, TWidgetTarget>;
+  resolveTargetByWidgetId?: (
+    widgetId: string,
+  ) => TWidgetTarget | undefined;
 };
 
 /** Structured runtime error union thrown by dashboard runtime APIs. */
@@ -259,6 +262,11 @@ export function createDashboardRuntime(
         return () => {};
       }
 
+      const resolveTargetByWidgetId =
+        input.resolveTargetByWidgetId ??
+        ((widgetId: string): TWidgetTarget | undefined =>
+          input.targetByWidgetId?.[widgetId]);
+
       const widgetById = new Map<string, PersistedWidget>();
       for (const widget of input.session.widgets) {
         widgetById.set(widget.id, widget);
@@ -276,7 +284,7 @@ export function createDashboardRuntime(
               continue;
             }
 
-            const target = input.targetByWidgetId[widget.id];
+            const target = resolveTargetByWidgetId(widget.id);
             if (target === undefined) {
               continue;
             }
