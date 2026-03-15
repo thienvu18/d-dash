@@ -18,7 +18,7 @@ jobs:
     steps:
       - name: Checkout
         # bumped to v5 to pick up Node.js 24 compatibility improvements
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Setup Node
         # bumped to v5 to pick up Node.js 24 compatibility improvements
