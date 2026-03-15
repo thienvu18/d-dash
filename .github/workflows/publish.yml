@@ -17,14 +17,12 @@ jobs:
       contents: read
     steps:
       - name: Checkout
-        # bumped to v5 to pick up Node.js 24 compatibility improvements
         uses: actions/checkout@v6
 
       - name: Setup Node
-        # bumped to v5 to pick up Node.js 24 compatibility improvements
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
           registry-url: https://registry.npmjs.org
 
