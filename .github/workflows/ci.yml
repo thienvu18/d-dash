@@ -13,14 +13,12 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
     steps:
       - name: Checkout
-        # bumped to v5 to pick up Node.js 24 compatibility improvements
         uses: actions/checkout@v6
 
       - name: Setup Node
-        # bumped to v5 to pick up Node.js 24 compatibility improvements
         uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
