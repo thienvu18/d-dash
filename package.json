@@ -34,9 +34,12 @@
     "release:publish": "npm run release:prepare && node scripts/publish-packages.mjs publish"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
+    "@eslint/js": "^10.0.1",
     "@typescript-eslint/eslint-plugin": "^8.28.0",
     "@typescript-eslint/parser": "^8.28.0",
     "eslint": "^10.0.3",
+    "globals": "^17.4.0",
     "typedoc": "^0.28.0",
     "typescript": "^5.9.3"
   }
