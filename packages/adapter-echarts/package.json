@@ -23,7 +23,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "test": "npm run build && node --test tests/**/*.spec.js"
+    "test": "npm run build && node --test $(find tests -name '*.spec.js')"
   },
   "peerDependencies": {
     "@d-dash/core": "^0.1.0",
