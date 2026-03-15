@@ -8,6 +8,10 @@ import {
 import { createGridstackAdapter } from "../../../../packages/adapter-gridstack/dist/index.js";
 import { createEChartsAdapters } from "../../../../packages/adapter-echarts/dist/index.js";
 import { createRestDatasourceAdapter } from "../../../../packages/datasource-rest/dist/index.js";
+import {
+  setupWidgetResizeObservers,
+  waitForElementSize,
+} from "./runtime-helpers.js";
 
 const appStateEl = document.getElementById("app-state");
 const gridEl = document.getElementById("grid-root");
@@ -20,45 +24,22 @@ const WIDGET_HOST_IDS = {
   w4: "widget-html",
 };
 
-function logState(message) {
-  if (appStateEl) {
-    appStateEl.textContent = message;
-  }
-}
-
-function logEvent(message) {
-  if (!eventLogEl) {
-    return;
-  }
-
+const logEvent = (message) => {
+  if (!eventLogEl) return;
   const item = document.createElement("li");
   item.textContent = `${new Date().toLocaleTimeString()} | ${message}`;
   eventLogEl.prepend(item);
-
   while (eventLogEl.childElementCount > 16) {
     eventLogEl.removeChild(eventLogEl.lastElementChild);
   }
-}
+};
 
-function describeElementSize(el) {
-  return `${el.clientWidth}x${el.clientHeight}`;
-}
+const logState = (message) => {
+  if (appStateEl) appStateEl.textContent = message;
+  logEvent(message);
+};
 
-async function waitForElementSize(
-  el,
-  { minWidth = 180, minHeight = 90, timeoutMs = 1200 } = {},
-) {
-  const startedAt = performance.now();
-
-  while (performance.now() - startedAt < timeoutMs) {
-    if (el.clientWidth >= minWidth && el.clientHeight >= minHeight) {
-      return true;
-    }
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-  }
-
-  return false;
-}
+const describeElementSize = (el) => `${el.clientWidth}x${el.clientHeight}`;
 
 function makeDashboard() {
   return {
@@ -214,30 +195,6 @@ function registerAdapters() {
   );
 
   return registry;
-}
-
-function setupWidgetResizeObservers(registry, session, widgetTargets) {
-  const observers = [];
-
-  for (const widget of session.widgets) {
-    const target = widgetTargets[widget.id];
-    const adapter = registry.requireVisualization(widget.visualization.type);
-    if (!target || !adapter.resize) {
-      continue;
-    }
-
-    const observer = new ResizeObserver(() => {
-      adapter.resize?.(target);
-    });
-    observer.observe(target.el);
-    observers.push(observer);
-  }
-
-  return () => {
-    for (const observer of observers) {
-      observer.disconnect();
-    }
-  };
 }
 
 async function main() {

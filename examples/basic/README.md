@@ -69,3 +69,5 @@ Open `http://127.0.0.1:5174` in your browser.
 ## Entry point
 
 See `examples/basic/src/index.mjs` for Node and `examples/basic/src/browser/main.js` for browser wiring.
+Browser lifecycle utilities for size/resize handling are in
+`examples/basic/src/browser/runtime-helpers.js`.
