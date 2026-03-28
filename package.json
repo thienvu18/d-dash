@@ -43,7 +43,7 @@
     "@typescript-eslint/parser": "^8.28.0",
     "eslint": "^10.0.3",
     "globals": "^17.4.0",
-    "typedoc": "^0.28.0",
+    "typedoc": "^0.28.18",
     "typescript": "^5.9.3"
   }
 }
