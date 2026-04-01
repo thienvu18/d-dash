@@ -27,7 +27,7 @@
   },
   "peerDependencies": {
     "@d-dash/core": "^0.1.0",
-    "echarts": ">=5.0.0"
+    "echarts": "^6.0.0"
   },
   "keywords": [
     "dashboard",
@@ -47,6 +47,7 @@
   },
   "devDependencies": {
     "@d-dash/core": "file:../core",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.0",
+    "echarts": "^6.0.0"
   }
 }
