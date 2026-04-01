@@ -4,49 +4,19 @@ import type {
   GridLayoutChange,
   GridLayoutChangeHandler,
 } from "@d-dash/core";
-
-/**
- * Minimal subset of the gridstack.js GridStack instance API required by this adapter.
- * Using a structural interface keeps the adapter decoupled from gridstack's exact import path.
- */
-export type GridStackInstance = {
-  update(
-    el: Element,
-    opts: { x: number; y: number; w: number; h: number },
-  ): void;
-  on?(event: "change", callback: GridStackChangeCallback): void;
-  off?(event: "change", callback: GridStackChangeCallback): void;
-  destroy(removeDOM?: boolean): void;
-};
-
-type GridStackNodeChange = {
-  id?: string;
-  x?: number;
-  y?: number;
-  w?: number;
-  h?: number;
-  el?: Element & { getAttribute?(name: string): string | null };
-};
-
-type GridStackChangeCallback = (
-  event: unknown,
-  items: GridStackNodeChange[],
-) => void;
-
-/**
- * Factory interface matching gridstack.js static `GridStack.init()`.
- * Pass the real `GridStack` class from gridstack.js, or a test double.
- */
-export type GridStackFactory = {
-  init(options?: Record<string, unknown>, el?: HTMLElement): GridStackInstance;
-};
+import type {
+  GridStack,
+  GridStackNode,
+  GridStackOptions,
+  GridStackElement,
+} from "gridstack";
 
 /** Configuration options for creating a Gridstack adapter instance. */
 export type GridstackAdapterOptions = {
-  /** The GridStack class (or compatible factory). Injected to keep the adapter testable. */
-  GridStack: GridStackFactory;
+  /** The GridStack class (injected for testability). */
+  GridStack: typeof GridStack;
   /** Options forwarded verbatim to GridStack.init(). */
-  gridOptions?: Record<string, unknown>;
+  gridOptions?: GridStackOptions;
 };
 
 /**
@@ -73,8 +43,11 @@ export function createGridstackAdapter(
   options: GridstackAdapterOptions,
 ): GridAdapter<GridstackTarget> {
   // One GridStack instance per container element; keyed weakly to avoid leaks.
-  const instances = new WeakMap<HTMLElement, GridStackInstance>();
-  const changeHandlers = new WeakMap<HTMLElement, GridStackChangeCallback>();
+  const instances = new WeakMap<HTMLElement, GridStack>();
+  const changeHandlers = new WeakMap<
+    HTMLElement,
+    (event: unknown, items?: GridStackNode[]) => void
+  >();
   const subscribers = new WeakMap<HTMLElement, Set<GridLayoutChangeHandler>>();
 
   const capabilities: GridCapabilities = {
@@ -95,13 +68,14 @@ export function createGridstackAdapter(
       instances.set(target.el, grid);
 
       if (typeof grid.on === "function") {
-        const handler: GridStackChangeCallback = (_event, items) => {
+        const handler = (_event: unknown, items?: GridStackNode[]) => {
           const changes: GridLayoutChange[] = [];
 
           for (const item of items ?? []) {
             const widgetId =
+              // prefer explicit id, fall back to element `gs-id` attribute when present
               item.id ??
-              (typeof item.el?.getAttribute === "function"
+              (item.el?.getAttribute
                 ? (item.el.getAttribute("gs-id") ?? undefined)
                 : undefined);
 
@@ -168,7 +142,9 @@ export function createGridstackAdapter(
 
       for (const change of changes) {
         // Widget elements are expected to carry a `gs-id` attribute matching the widgetId.
-        const el = target.el.querySelector(`[gs-id="${change.widgetId}"]`);
+        const el = target.el.querySelector(
+          `[gs-id="${change.widgetId}"]`,
+        ) as unknown as GridStackElement;
         if (!el) {
           // Widget element not yet in DOM — skip gracefully, host can retry after mount.
           continue;
@@ -180,9 +156,9 @@ export function createGridstackAdapter(
     destroy(target: GridstackTarget): void {
       const grid = instances.get(target.el);
       if (grid) {
-        const handler = changeHandlers.get(target.el);
-        if (handler && typeof grid.off === "function") {
-          grid.off("change", handler);
+        if (typeof grid.off === "function") {
+          // grid.off removes handlers by event name per gridstack typings
+          grid.off("change");
         }
 
         // Pass false to preserve DOM nodes; host is responsible for DOM cleanup.
