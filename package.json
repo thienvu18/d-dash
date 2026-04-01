@@ -44,6 +44,6 @@
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
     "typedoc": "^0.28.18",
-    "typescript": "^5.9.3"
+    "typescript": "^6.0.2"
   }
 }
