@@ -4,24 +4,8 @@ import type {
   VisualizationCapabilities,
   VisualizationRenderRequest,
 } from "@d-dash/core";
-
-// ---------------------------------------------------------------------------
-// ECharts structural types
-// Using structural interfaces keeps the adapter decoupled from echarts' exact
-// import path and makes unit testing DOM-free.
-// ---------------------------------------------------------------------------
-
-/** Minimal subset of an ECharts instance used by this adapter. */
-export type EChartsInstance = {
-  setOption(option: Record<string, unknown>, notMerge?: boolean): void;
-  resize(): void;
-  dispose(): void;
-};
-
-/** Minimal factory shape matching echarts.init(). */
-export type EChartsFactory = {
-  init(el: HTMLElement, theme?: string): EChartsInstance;
-};
+// Use the official `echarts` types for full compatibility and better typing.
+import type * as echarts from "echarts";
 
 // ---------------------------------------------------------------------------
 // Target and adapter options
@@ -35,8 +19,8 @@ export type EChartsTarget = {
 };
 
 export type EChartsAdapterOptions = {
-  /** The echarts object (or compatible factory). Injected for testability. */
-  echarts: EChartsFactory;
+  /** The echarts module (injected for testability). */
+  echarts: typeof echarts;
   /**
    * Optional sanitizer for html widget content.
    * If omitted, a conservative built-in sanitizer is used.
@@ -221,7 +205,7 @@ function makeEChartsAdapter(
   adapterOptions: EChartsAdapterOptions,
 ): VisualizationAdapter<EChartsTarget> {
   // One ECharts instance per container element, keyed weakly to avoid leaks.
-  const instances = new WeakMap<HTMLElement, EChartsInstance>();
+  const instances = new WeakMap<HTMLElement, echarts.ECharts>();
 
   return {
     type: kind,
