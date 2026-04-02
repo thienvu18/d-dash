@@ -1,6 +1,6 @@
 {
   "name": "@d-dash/adapter-gridstack",
-  "version": "0.1.1",
+  "version": "1.0.0",
   "description": "Gridstack layout adapter for d-dash",
   "license": "LGPL-3.0-or-later",
   "repository": {
@@ -26,7 +26,7 @@
     "test": "npm run build && node --test $(find tests -name '*.spec.js')"
   },
   "peerDependencies": {
-    "@d-dash/core": "^0.1.1",
+    "@d-dash/core": "^0.2.0",
     "gridstack": "^12.4.0"
   },
   "keywords": [
