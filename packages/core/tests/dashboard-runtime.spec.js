@@ -196,16 +196,22 @@ describe("createDashboardRuntime", () => {
       destroy() {},
     });
 
-    const runtime = createDashboardRuntime({ registry });
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
     const session = runtime.createSession(makeDashboard());
     const widgetTarget = { el: "widget-el" };
 
-    const unsubscribe = await runtime.bindLayoutResize({
+    const gridTarget = { el: "grid-el" };
+    await runtime.applyDashboardLayout({ session, gridId: "gridstack", target: gridTarget });
+
+    // Execute the widget to register its target in the runtime.
+    await runtime.executeWidget({
       session,
-      gridId: "gridstack",
-      gridTarget: { el: "grid-el" },
-      targetByWidgetId: { w1: widgetTarget },
+      widgetId: "w1",
+      target: widgetTarget,
+      context: { traceId: "t1" },
     });
+
+    const unsubscribe = await runtime.bindLayoutResize(session);
 
     assert.equal(typeof emitLayoutChange, "function");
     emitLayoutChange?.([
@@ -242,17 +248,13 @@ describe("createDashboardRuntime", () => {
     const runtime = createDashboardRuntime({ registry });
     const session = runtime.createSession(makeDashboard());
 
-    const unsubscribe = await runtime.bindLayoutResize({
-      session,
-      gridId: "gridstack",
-      gridTarget: {},
-      targetByWidgetId: {},
-    });
+    await runtime.applyDashboardLayout({ session, gridId: "gridstack", target: {} });
+    const unsubscribe = await runtime.bindLayoutResize(session);
 
     assert.doesNotThrow(() => unsubscribe());
   });
 
-  test("bindLayoutResize supports resolveTargetByWidgetId callback", async () => {
+  test("bindLayoutResize uses target registered by executeWidget", async () => {
     const registry = createAdapterRegistry();
     registry.registerDatasource({
       id: "metrics",
@@ -284,23 +286,264 @@ describe("createDashboardRuntime", () => {
       destroy() {},
     });
 
-    const runtime = createDashboardRuntime({ registry });
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
     const session = runtime.createSession(makeDashboard());
     const widgetTarget = { el: "widget-el" };
 
-    await runtime.bindLayoutResize({
+    await runtime.applyDashboardLayout({ session, gridId: "gridstack", target: { el: "grid-el" } });
+
+    await runtime.executeWidget({
       session,
-      gridId: "gridstack",
-      gridTarget: { el: "grid-el" },
-      resolveTargetByWidgetId(widgetId) {
-        return widgetId === "w1" ? widgetTarget : undefined;
-      },
+      widgetId: "w1",
+      target: widgetTarget,
+      context: { traceId: "t1" },
     });
+
+    await runtime.bindLayoutResize(session);
 
     emitLayoutChange?.([{ widgetId: "w1", x: 0, y: 0, w: 6, h: 4 }]);
 
     assert.equal(resizedTargets.length, 1);
     assert.equal(resizedTargets[0], widgetTarget);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Option A: registerWidgetTargets
+  // ---------------------------------------------------------------------------
+
+  test("registerWidgetTargets registers targets used by bindLayoutResize without executeWidget", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+
+    const resizedTargets = [];
+    registry.registerVisualization({
+      type: "timeseries",
+      render() {},
+      resize(target) {
+        resizedTargets.push(target);
+      },
+    });
+
+    let emitLayoutChange = null;
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      subscribeLayoutChanges(_target, handler) {
+        emitLayoutChange = handler;
+        return () => {};
+      },
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
+    const session = runtime.createSession(makeDashboard());
+    const widgetTarget = { el: "widget-el" };
+
+    // Register targets without executing.
+    runtime.registerWidgetTargets({ w1: widgetTarget });
+
+    await runtime.applyDashboardLayout({ session, gridId: "gridstack", target: { el: "grid-el" } });
+    await runtime.bindLayoutResize(session);
+
+    emitLayoutChange?.([{ widgetId: "w1", x: 0, y: 0, w: 6, h: 4 }]);
+
+    assert.equal(resizedTargets.length, 1);
+    assert.equal(resizedTargets[0], widgetTarget);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Option B: createBoundSession
+  // ---------------------------------------------------------------------------
+
+  test("createBoundSession eliminates session re-passing across calls", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return {
+          status: "success",
+          frames: [{ fields: [{ name: "cpu", type: "number", values: [42] }] }],
+        };
+      },
+    });
+
+    const resizedTargets = [];
+    registry.registerVisualization({
+      type: "timeseries",
+      render() {},
+      resize(target) {
+        resizedTargets.push(target);
+      },
+    });
+
+    let emitLayoutChange = null;
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      subscribeLayoutChanges(_target, handler) {
+        emitLayoutChange = handler;
+        return () => {};
+      },
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
+    const bound = runtime.createBoundSession(runtime.createSession(makeDashboard()));
+    const widgetTarget = { el: "widget-el" };
+
+    await bound.applyLayout({ gridId: "gridstack", target: { el: "grid-el" } });
+    bound.registerWidgetTargets({ w1: widgetTarget });
+    await bound.executeAllWidgets({
+      context: { traceId: "t1" },
+    });
+    await bound.bindLayoutResize();
+
+    emitLayoutChange?.([{ widgetId: "w1", x: 0, y: 0, w: 6, h: 4 }]);
+
+    assert.equal(resizedTargets.length, 1);
+    assert.equal(resizedTargets[0], widgetTarget);
+    assert.ok(bound.session);
+  });
+
+  test("BoundDashboardSession.registerWidgetTargets delegates to runtime", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+    const resizedTargets = [];
+    registry.registerVisualization({
+      type: "timeseries",
+      render() {},
+      resize(target) {
+        resizedTargets.push(target);
+      },
+    });
+    let emitLayoutChange = null;
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      subscribeLayoutChanges(_target, handler) {
+        emitLayoutChange = handler;
+        return () => {};
+      },
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
+    const bound = runtime.createBoundSession(runtime.createSession(makeDashboard()));
+    const widgetTarget = { el: "w1-el" };
+
+    bound.registerWidgetTargets({ w1: widgetTarget });
+    await bound.applyLayout({ gridId: "gridstack", target: { el: "grid-el" } });
+    await bound.bindLayoutResize();
+
+    emitLayoutChange?.([{ widgetId: "w1", x: 0, y: 0, w: 6, h: 4 }]);
+
+    assert.equal(resizedTargets.length, 1);
+    assert.equal(resizedTargets[0], widgetTarget);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Option C: mountDashboard
+  // ---------------------------------------------------------------------------
+
+  test("mountDashboard applies layout, executes widgets, and binds resize in one call", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return {
+          status: "success",
+          frames: [{ fields: [{ name: "cpu", type: "number", values: [1] }] }],
+        };
+      },
+    });
+
+    const resizedTargets = [];
+    registry.registerVisualization({
+      type: "timeseries",
+      render() {},
+      resize(target) {
+        resizedTargets.push(target);
+      },
+    });
+
+    let emitLayoutChange = null;
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      subscribeLayoutChanges(_target, handler) {
+        emitLayoutChange = handler;
+        return () => {};
+      },
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
+    const session = runtime.createSession(makeDashboard());
+    const widgetTarget = { el: "widget-el" };
+
+    runtime.registerWidgetTargets({ w1: widgetTarget });
+    const { widgetResults, unmount } = await runtime.mountDashboard({
+      session,
+      gridId: "gridstack",
+      gridTarget: { el: "grid-el" },
+      context: { traceId: "t1" },
+    });
+
+    assert.equal(widgetResults.length, 1);
+    assert.equal(widgetResults[0].widgetId, "w1");
+
+    emitLayoutChange?.([{ widgetId: "w1", x: 0, y: 0, w: 6, h: 4 }]);
+
+    assert.equal(resizedTargets.length, 1);
+    assert.equal(resizedTargets[0], widgetTarget);
+    assert.equal(typeof unmount, "function");
+  });
+
+  test("BoundDashboardSession.mount is equivalent to mountDashboard", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+    registry.registerVisualization({ type: "timeseries", render() {} });
+    registry.registerGrid({
+      id: "gridstack",
+      init() {},
+      subscribeLayoutChanges(_target, _handler) {
+        return () => {};
+      },
+      applyLayout() {},
+      destroy() {},
+    });
+
+    const runtime = createDashboardRuntime({ registry, now: () => 1_710_000_000_000 });
+    const bound = runtime.createBoundSession(runtime.createSession(makeDashboard()));
+
+    bound.registerWidgetTargets({ w1: { el: "w1-el" } });
+    const { widgetResults, unmount } = await bound.mount({
+      gridId: "gridstack",
+      gridTarget: { el: "grid-el" },
+      context: { traceId: "t1" },
+    });
+
+    assert.equal(widgetResults.length, 1);
+    assert.equal(typeof unmount, "function");
   });
 
   test("preflightDashboard returns ok when all adapters are present", () => {
@@ -424,12 +667,9 @@ describe("createDashboardRuntime", () => {
     const runtime = createDashboardRuntime({ registry });
     const session = runtime.createSession(makeTwoWidgetDashboard());
 
+    runtime.registerWidgetTargets({ w1: {}, w2: {} });
     const results = await runtime.executeAllWidgets({
       session,
-      targetByWidgetId: {
-        w1: {},
-        w2: {},
-      },
       context: { traceId: "trace-runtime-3" },
     });
 
@@ -457,10 +697,11 @@ describe("createDashboardRuntime", () => {
     const runtime = createDashboardRuntime({ registry });
     const session = runtime.createSession(makeTwoWidgetDashboard());
 
+    // Only register w1 — w2 is intentionally left missing to trigger the error.
+    runtime.registerWidgetTargets({ w1: {} });
     await assert.rejects(
       runtime.executeAllWidgets({
         session,
-        targetByWidgetId: { w1: {} },
         context: { traceId: "trace-runtime-4" },
       }),
       (error) => {

@@ -97,7 +97,7 @@ export {
 
 export type {
   ApplyDashboardLayoutInput,
-  BindLayoutResizeInput,
+  BoundDashboardSession,
   DashboardPreflightResult,
   DashboardRuntimeError,
   DashboardRuntime,
@@ -106,6 +106,8 @@ export type {
   ExecuteAllWidgetsInput,
   ExecuteSessionWidgetInput,
   ExecuteWidgetResult,
+  MountDashboardInput,
+  MountDashboardResult,
   RuntimeEvent,
   RuntimeEventHandler,
 } from "./dashboard-runtime";

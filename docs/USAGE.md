@@ -39,13 +39,18 @@ registry.registerVisualization(htmlWidgetAdapter);
 registry.registerGrid(gridstackAdapter);
 
 const dashboard = await loadDashboardJson();
-const validated = runtime.validateDashboard(dashboard);
-const session = runtime.createSession(validated);
+const session = runtime.createSession(dashboard);
 
-for (const widget of session.widgets) {
-  const result = await runtime.executeWidget(widget.id);
-  host.renderWidget(widget.id, result);
-}
+// Register render targets for all widgets upfront.
+runtime.registerWidgetTargets({ w1: el1, w2: el2 });
+
+// Apply layout, execute all widgets, bind resize in one call.
+const { unmount } = await runtime.mountDashboard({
+  session,
+  gridId: "gridstack",
+  gridTarget,
+  context: { traceId: "my-trace" },
+});
 ```
 
 ## 4. Dashboard Loading and Validation
@@ -76,17 +81,33 @@ Recommended host lifecycle:
 Preferred runtime bridge:
 
 ```ts
-const unbind = await runtime.bindLayoutResize({
-  session,
-  gridId: "gridstack",
-  gridTarget,
-  resolveTargetByWidgetId(widgetId) {
-    return widgetTargetById.get(widgetId);
-  },
-});
+// Register render targets before applying layout.
+runtime.registerWidgetTargets({ w1: widgetEl1, w2: widgetEl2 });
+
+// Apply the grid layout — stores the grid entry internally.
+await runtime.applyDashboardLayout({ session, gridId: "gridstack", target: gridTarget });
+
+// Subscribe grid layout changes to visualization resize.
+const unbind = await runtime.bindLayoutResize(session);
 
 // later on unmount
 unbind();
+```
+
+Or use the single-call convenience:
+
+```ts
+runtime.registerWidgetTargets({ w1: widgetEl1, w2: widgetEl2 });
+
+const { unmount } = await runtime.mountDashboard({
+  session,
+  gridId: "gridstack",
+  gridTarget,
+  context,
+});
+
+// later on unmount
+unmount();
 ```
 
 This keeps host wiring thin while preserving headless core boundaries.

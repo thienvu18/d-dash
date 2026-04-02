@@ -64,9 +64,8 @@ export type ExecuteSessionWidgetInput<TTarget = unknown> = {
 };
 
 /** Inputs for executing all widgets in a session. */
-export type ExecuteAllWidgetsInput<TTarget = unknown> = {
+export type ExecuteAllWidgetsInput = {
   session: DashboardSession;
-  targetByWidgetId: Record<string, TTarget>;
   context: RuntimeContext;
 };
 
@@ -90,18 +89,42 @@ export type ApplyDashboardLayoutInput<TTarget = unknown> = {
   target: TTarget;
 };
 
-/** Inputs for binding grid layout-change events to visualization resize hooks. */
-export type BindLayoutResizeInput<
-  TGridTarget = unknown,
-  TWidgetTarget = unknown,
-> = {
+/** Inputs for the mountDashboard convenience method. */
+export type MountDashboardInput<TGridTarget = unknown> = {
   session: DashboardSession;
   gridId: string;
   gridTarget: TGridTarget;
-  targetByWidgetId?: Record<string, TWidgetTarget>;
-  resolveTargetByWidgetId?: (
-    widgetId: string,
-  ) => TWidgetTarget | undefined;
+  context: RuntimeContext;
+};
+
+/** Result returned by mountDashboard. */
+export type MountDashboardResult = {
+  /** Widget execution results, one per widget. */
+  widgetResults: ExecuteWidgetResult[];
+  /** Unbinds the layout-resize subscription set up during mount. */
+  unmount: () => void;
+};
+
+/**
+ * Session handle returned by createBoundSession.
+ * All methods are pre-bound to the session — no need to re-pass session on every call.
+ */
+export type BoundDashboardSession = {
+  readonly session: DashboardSession;
+  applyLayout<TTarget = unknown>(
+    input: Omit<ApplyDashboardLayoutInput<TTarget>, "session">,
+  ): Promise<void>;
+  bindLayoutResize(): Promise<() => void>;
+  executeWidget<TTarget = unknown>(
+    input: Omit<ExecuteSessionWidgetInput<TTarget>, "session">,
+  ): Promise<DatasourceQueryResult>;
+  executeAllWidgets(
+    input: Omit<ExecuteAllWidgetsInput, "session">,
+  ): Promise<ExecuteWidgetResult[]>;
+  registerWidgetTargets<TTarget = unknown>(targets: Record<string, TTarget>): void;
+  mount<TGridTarget = unknown>(
+    input: Omit<MountDashboardInput<TGridTarget>, "session">,
+  ): Promise<MountDashboardResult>;
 };
 
 /** Structured runtime error union thrown by dashboard runtime APIs. */
@@ -114,49 +137,74 @@ export type DashboardRuntimeError = DDashError & {
 
 /** Public dashboard runtime API surface. */
 export type DashboardRuntime = {
+  /**
+   * Registers widget render targets in bulk so the runtime can resolve them
+   * during layout-resize orchestration without requiring a separate execute call.
+   * @experimental
+   */
+  registerWidgetTargets<TTarget = unknown>(targets: Record<string, TTarget>): void;
+  /**
+   * Returns a session handle with all methods pre-bound to the given session,
+   * eliminating the need to re-pass `session` on every subsequent call.
+   * @experimental
+   */
+  createBoundSession(session: DashboardSession): BoundDashboardSession;
+  /**
+   * Applies the dashboard layout, executes all widgets, and binds layout-resize
+   * orchestration in a single call. Returns widget execution results and an
+   * `unmount` function that tears down the resize subscription.
+   * @experimental
+   */
+  mountDashboard<TGridTarget = unknown>(
+    input: MountDashboardInput<TGridTarget>,
+  ): Promise<MountDashboardResult>;
   validateDashboard(
     dashboard: PersistedDashboard,
     options?: Omit<
       DashboardValidationOptions,
       "knownDatasources" | "knownVisualizations"
-    >,
+    >
   ): ValidationResult;
   validateDashboardWithRegistryMetrics(
     dashboard: PersistedDashboard,
     options?: Omit<
       DashboardValidationOptions,
       "knownDatasources" | "knownVisualizations" | "knownMetrics"
-    >,
+    >
   ): Promise<ValidationResult>;
   preflightDashboard(dashboard: PersistedDashboard): DashboardPreflightResult;
   applyDashboardLayout<TTarget = unknown>(
-    input: ApplyDashboardLayoutInput<TTarget>,
+    input: ApplyDashboardLayoutInput<TTarget>
   ): Promise<void>;
-  bindLayoutResize<TGridTarget = unknown, TWidgetTarget = unknown>(
-    input: BindLayoutResizeInput<TGridTarget, TWidgetTarget>,
-  ): Promise<() => void>;
+  bindLayoutResize(session: DashboardSession): Promise<() => void>;
   createSession(dashboard: PersistedDashboard): DashboardSession;
   createSessionWithRegistryMetrics(
     dashboard: PersistedDashboard,
     options?: Omit<
       DashboardValidationOptions,
       "knownDatasources" | "knownVisualizations" | "knownMetrics"
-    >,
+    >
   ): Promise<DashboardSession>;
   executeWidget<TTarget = unknown>(
-    input: ExecuteSessionWidgetInput<TTarget>,
+    input: ExecuteSessionWidgetInput<TTarget>
   ): Promise<DatasourceQueryResult>;
-  executeAllWidgets<TTarget = unknown>(
-    input: ExecuteAllWidgetsInput<TTarget>,
+  executeAllWidgets(
+    input: ExecuteAllWidgetsInput
   ): Promise<ExecuteWidgetResult[]>;
   discoverMetrics(datasourceId?: string): Promise<MetricDefinition[]>;
 };
 
 /** Creates dashboard runtime orchestrator bound to adapter registry and clock/event hooks. */
 export function createDashboardRuntime(
-  options: DashboardRuntimeOptions,
+  options: DashboardRuntimeOptions
 ): DashboardRuntime {
   const getNow = options.now ?? Date.now;
+  // Populated by executeWidget and registerWidgetTargets so that executeAllWidgets
+  // and bindLayoutResize can resolve targets without requiring the host to pass them.
+  const widgetTargets = new Map<string, unknown>();
+  // Keyed by dashboardId. Stores the gridId and grid target set by applyDashboardLayout
+  // so that bindLayoutResize needs no extra input — one dashboard maps to one grid.
+  const gridEntries = new Map<string, { gridId: string; target: unknown }>();
 
   return {
     validateDashboard(
@@ -164,7 +212,7 @@ export function createDashboardRuntime(
       userOptions: Omit<
         DashboardValidationOptions,
         "knownDatasources" | "knownVisualizations"
-      > = {},
+      > = {}
     ): ValidationResult {
       return validatePersistedDashboard(dashboard, {
         ...userOptions,
@@ -178,7 +226,7 @@ export function createDashboardRuntime(
       userOptions: Omit<
         DashboardValidationOptions,
         "knownDatasources" | "knownVisualizations" | "knownMetrics"
-      > = {},
+      > = {}
     ): Promise<ValidationResult> {
       const knownMetrics = await this.discoverMetrics();
 
@@ -191,13 +239,13 @@ export function createDashboardRuntime(
     },
 
     preflightDashboard(
-      dashboard: PersistedDashboard,
+      dashboard: PersistedDashboard
     ): DashboardPreflightResult {
       const registeredDatasources = new Set(
-        options.registry.listDatasourceIds(),
+        options.registry.listDatasourceIds()
       );
       const registeredVisualizations = new Set(
-        options.registry.listVisualizationKinds(),
+        options.registry.listVisualizationKinds()
       );
 
       const missingDatasourceSet = new Set<string>();
@@ -225,9 +273,14 @@ export function createDashboardRuntime(
     },
 
     async applyDashboardLayout<TTarget = unknown>(
-      input: ApplyDashboardLayoutInput<TTarget>,
+      input: ApplyDashboardLayoutInput<TTarget>
     ): Promise<void> {
       const adapter = options.registry.requireGrid(input.gridId);
+      // Store gridId and target keyed by dashboardId — one dashboard maps to one grid.
+      gridEntries.set(input.session.dashboard.dashboardId, {
+        gridId: input.gridId,
+        target: input.target,
+      });
 
       // Build a widgetId lookup keyed by layoutId so layout items map to widget identifiers.
       const widgetByLayoutId = new Map<string, string>();
@@ -254,29 +307,36 @@ export function createDashboardRuntime(
       await adapter.applyLayout(changes, input.target);
     },
 
-    async bindLayoutResize<TGridTarget = unknown, TWidgetTarget = unknown>(
-      input: BindLayoutResizeInput<TGridTarget, TWidgetTarget>,
+    async bindLayoutResize(
+      session: DashboardSession
     ): Promise<() => void> {
-      const grid = options.registry.requireGrid(input.gridId);
+      const dashboardId = session.dashboard.dashboardId;
+      const gridEntry = gridEntries.get(dashboardId);
+      if (gridEntry === undefined) {
+        throw new DashboardRuntimeException(
+          "RUNTIME_TARGET_MISSING",
+          `No grid registered for dashboard '${dashboardId}'. Call applyDashboardLayout before bindLayoutResize.`,
+          { dashboardId },
+        );
+      }
+
+      const grid = options.registry.requireGrid(gridEntry.gridId);
       if (!grid.subscribeLayoutChanges) {
         return () => {};
       }
 
-      const resolveTargetByWidgetId =
-        input.resolveTargetByWidgetId ??
-        ((widgetId: string): TWidgetTarget | undefined =>
-          input.targetByWidgetId?.[widgetId]);
-
       const widgetById = new Map<string, PersistedWidget>();
-      for (const widget of input.session.widgets) {
+      for (const widget of session.widgets) {
         widgetById.set(widget.id, widget);
       }
 
       const unsubscribe = await grid.subscribeLayoutChanges(
-        input.gridTarget,
+        gridEntry.target,
         (changes) => {
           // Resize each affected widget once per grid event batch.
-          const touchedWidgetIds = new Set(changes.map((change) => change.widgetId));
+          const touchedWidgetIds = new Set(
+            changes.map((change) => change.widgetId)
+          );
 
           for (const widgetId of touchedWidgetIds) {
             const widget = widgetById.get(widgetId);
@@ -284,20 +344,84 @@ export function createDashboardRuntime(
               continue;
             }
 
-            const target = resolveTargetByWidgetId(widget.id);
+            const target = widgetTargets.get(widget.id);
             if (target === undefined) {
               continue;
             }
 
             const adapter = options.registry.requireVisualization(
-              widget.visualization.type,
+              widget.visualization.type
             );
-            adapter.resize?.(target);
+            adapter.resize?.(target as unknown);
           }
-        },
+        }
       );
 
       return unsubscribe;
+    },
+
+    registerWidgetTargets<TTarget = unknown>(targets: Record<string, TTarget>): void {
+      for (const [widgetId, target] of Object.entries(targets)) {
+        widgetTargets.set(widgetId, target as unknown);
+      }
+    },
+
+    createBoundSession(session: DashboardSession): BoundDashboardSession {
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      const runtime = this;
+      return {
+        session,
+        applyLayout<TTarget = unknown>(
+          input: Omit<ApplyDashboardLayoutInput<TTarget>, "session">,
+        ): Promise<void> {
+          return runtime.applyDashboardLayout({ ...input, session });
+        },
+        bindLayoutResize(): Promise<() => void> {
+          return runtime.bindLayoutResize(session);
+        },
+        executeWidget<TTarget = unknown>(
+          input: Omit<ExecuteSessionWidgetInput<TTarget>, "session">,
+        ): Promise<DatasourceQueryResult> {
+          return runtime.executeWidget({ ...input, session });
+        },
+        executeAllWidgets(
+          input: Omit<ExecuteAllWidgetsInput, "session">,
+        ): Promise<ExecuteWidgetResult[]> {
+          return runtime.executeAllWidgets({ ...input, session });
+        },
+        registerWidgetTargets<TTarget = unknown>(targets: Record<string, TTarget>): void {
+          runtime.registerWidgetTargets(targets);
+        },
+        mount<TGridTarget = unknown>(
+          input: Omit<
+            MountDashboardInput<TGridTarget>,
+            "session"
+          >,
+        ): Promise<MountDashboardResult> {
+          return runtime.mountDashboard({ ...input, session });
+        },
+      };
+    },
+
+    async mountDashboard<TGridTarget = unknown>(
+      input: MountDashboardInput<TGridTarget>,
+    ): Promise<MountDashboardResult> {
+      await this.applyDashboardLayout({
+        session: input.session,
+        gridId: input.gridId,
+        target: input.gridTarget,
+      });
+
+      const widgetResults = await this.executeAllWidgets({
+        session: input.session,
+        context: input.context,
+      });
+
+      const unsubscribe = await this.bindLayoutResize(
+        input.session,
+      );
+
+      return { widgetResults, unmount: unsubscribe };
     },
 
     createSession(dashboard: PersistedDashboard): DashboardSession {
@@ -310,28 +434,31 @@ export function createDashboardRuntime(
       userOptions: Omit<
         DashboardValidationOptions,
         "knownDatasources" | "knownVisualizations" | "knownMetrics"
-      > = {},
+      > = {}
     ): Promise<DashboardSession> {
       const validation = await this.validateDashboardWithRegistryMetrics(
         dashboard,
-        userOptions,
+        userOptions
       );
       return buildSessionFromValidatedDashboard(validation, dashboard, getNow);
     },
 
     async executeWidget<TTarget = unknown>(
-      input: ExecuteSessionWidgetInput<TTarget>,
+      input: ExecuteSessionWidgetInput<TTarget>
     ): Promise<DatasourceQueryResult> {
       const widget = input.session.widgets.find(
-        (candidate) => candidate.id === input.widgetId,
+        (candidate) => candidate.id === input.widgetId
       );
       if (!widget) {
         throw new DashboardRuntimeException(
           "RUNTIME_WIDGET_NOT_FOUND",
           `Widget '${input.widgetId}' not found in session.`,
-          { widgetId: input.widgetId },
+          { widgetId: input.widgetId }
         );
       }
+
+      // Cache the target so bindLayoutResize can resolve it without a host-supplied map.
+      widgetTargets.set(input.widgetId, input.target as unknown);
 
       const dashboardId = input.session.dashboard.dashboardId;
       const widgetId = input.widgetId;
@@ -371,18 +498,18 @@ export function createDashboardRuntime(
       }
     },
 
-    async executeAllWidgets<TTarget = unknown>(
-      input: ExecuteAllWidgetsInput<TTarget>,
+    async executeAllWidgets(
+      input: ExecuteAllWidgetsInput
     ): Promise<ExecuteWidgetResult[]> {
       const results: ExecuteWidgetResult[] = [];
 
       for (const widget of input.session.widgets) {
-        const target = input.targetByWidgetId[widget.id];
+        const target = widgetTargets.get(widget.id);
         if (target === undefined) {
           throw new DashboardRuntimeException(
             "RUNTIME_TARGET_MISSING",
             `Missing render target for widget '${widget.id}'.`,
-            { widgetId: widget.id },
+            { widgetId: widget.id }
           );
         }
 
@@ -436,7 +563,7 @@ export function createDashboardRuntime(
 function buildSessionFromValidatedDashboard(
   validation: ValidationResult,
   dashboard: PersistedDashboard,
-  getNow: () => number,
+  getNow: () => number
 ): DashboardSession {
   const schemaError = toSchemaValidationError(validation);
   if (schemaError) {
@@ -456,7 +583,7 @@ function buildSessionFromValidatedDashboard(
       {
         path: "timeRange",
         type: "inherit",
-      },
+      }
     );
   }
 
@@ -477,7 +604,7 @@ class DashboardRuntimeException extends Error implements DashboardRuntimeError {
   constructor(
     code: DashboardRuntimeError["code"],
     message: string,
-    details?: JsonObject,
+    details?: JsonObject
   ) {
     super(message);
     this.name = "DashboardRuntimeException";

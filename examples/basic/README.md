@@ -29,7 +29,9 @@ Browser layout now includes multiple widget types and sizes:
 - `w3` text (small)
 - `w4` html (wide, short)
 
-It also uses `runtime.bindLayoutResize(...)` to bridge grid layout changes to
+It also uses `runtime.registerWidgetTargets(...)` to pre-register render targets,
+`runtime.applyDashboardLayout(...)` to apply the grid layout, and
+`runtime.bindLayoutResize(session)` to bridge grid layout changes to
 visualization adapter `resize(...)` calls through core contracts.
 
 The event stream is shown on the page so host integrators can see execution and

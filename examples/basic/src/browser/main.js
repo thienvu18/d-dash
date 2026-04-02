@@ -250,6 +250,10 @@ async function main() {
   const session = runtime.createSession(dashboard);
   logEvent("createSession: completed");
 
+  // Register render targets for all widgets so the runtime can resolve them
+  // during executeAllWidgets and bindLayoutResize without host re-passing.
+  runtime.registerWidgetTargets(widgetTargets);
+
   const gridTarget = {
     el: gridEl,
   };
@@ -262,14 +266,14 @@ async function main() {
     widgetTargets,
   );
 
-  const unbindLayoutResize = await runtime.bindLayoutResize({
+  await runtime.applyDashboardLayout({
     session,
     gridId: "gridstack",
-    gridTarget,
-    resolveTargetByWidgetId(widgetId) {
-      return widgetTargets[widgetId];
-    },
+    target: gridTarget,
   });
+  logEvent("applyDashboardLayout: layout synchronized");
+
+  const unbindLayoutResize = await runtime.bindLayoutResize(session);
   logEvent("bindLayoutResize: grid layout changes now trigger visualization resize");
 
   const cleanup = () => {
@@ -278,13 +282,6 @@ async function main() {
     logEvent("teardown: unbound layout resize and disconnected ResizeObservers");
   };
   window.addEventListener("beforeunload", cleanup, { once: true });
-
-  await runtime.applyDashboardLayout({
-    session,
-    gridId: "gridstack",
-    target: gridTarget,
-  });
-  logEvent("applyDashboardLayout: layout synchronized");
 
   await Promise.all(
     Object.entries(widgetTargets).map(async ([widgetId, target]) => {
@@ -295,7 +292,6 @@ async function main() {
 
   const results = await runtime.executeAllWidgets({
     session,
-    targetByWidgetId: widgetTargets,
     context: { traceId: "trace-browser-demo" },
   });
 
