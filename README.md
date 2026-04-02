@@ -52,37 +52,40 @@ npm run docs:api
 
 Output is written to `docs/api`.
 
-## Release
+## Workflow
 
-Create a changeset whenever you make a user-facing change:
+### On `dev` — while coding
 
-```bash
-npm run changeset
-```
-
-When ready to ship — two commands cover the full flow:
+For every user-facing change (bug fix, new feature, breaking change), create a changeset before committing:
 
 ```bash
-npm run release:version   # bump versions, update CHANGELOGs, commit
-npm run release:publish   # lint/build/test, publish to npm, tag, push to GitHub
+npm run changeset   # select affected packages and semver bump type
+git add .
+git commit -m "feat: your change"
 ```
 
-Or in a single command:
+The generated `.changeset/*.md` file is committed alongside your code and travels with the PR to `main`.
+
+### On `main` — to release
+
+After merging from `dev`, run the full release flow:
+
+```bash
+npm run release:version   # consume changesets → bump versions, update CHANGELOGs, commit
+npm run release:publish   # lint/build/test → publish to npm → create git tags → push
+```
+
+Or as a single command:
 
 ```bash
 npm run release
 ```
 
-Dry-run (no publish, no version bump):
+Dry-run before publishing (validates everything, no npm publish or git push):
 
 ```bash
 npm run release:dry-run
 ```
-
-GitHub Actions:
-
-- `CI` runs `release:prepare` on push and pull requests.
-- `Publish Packages` supports manual dry-run and publish via workflow dispatch.
 
 Detailed maintainer steps are in [docs/RELEASE.md](docs/RELEASE.md).
 

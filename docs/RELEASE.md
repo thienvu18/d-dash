@@ -92,7 +92,6 @@ Repeat for each published package, or automate via a GitHub Actions workflow tri
 | Test suites | all packages |
 | API docs | `typedoc` |
 | Package metadata completeness | `release:check:metadata` |
-| Cross-package version consistency | `release:check:versions` |
 
 ---
 
