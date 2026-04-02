@@ -30,11 +30,14 @@
     "lint:fix": "eslint . --fix",
     "docs:api": "typedoc",
     "verify:exports": "node scripts/verify-exports.mjs",
-    "release:check:metadata": "node scripts/validate-package-metadata.mjs",
     "release:check:versions": "node scripts/validate-version-consistency.mjs",
+    "release:check:metadata": "node scripts/validate-package-metadata.mjs",
     "release:prepare": "npm run lint && npm run build:release && npm run test && npm run docs:api && npm run release:check:metadata && npm run release:check:versions",
+    "release:version": "changeset version && git add . && git commit -m \"chore(release): version packages\"",
+    "release:publish": "npm run release:prepare && changeset publish && git push --follow-tags origin main",
+    "release": "npm run release:version && npm run release:publish",
     "release:dry-run": "npm run release:prepare && node scripts/publish-packages.mjs dry-run",
-    "release:publish": "npm run release:prepare && node scripts/publish-packages.mjs publish"
+    "changeset": "changeset"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
@@ -44,6 +47,7 @@
     "eslint": "^10.1.0",
     "globals": "^17.4.0",
     "typedoc": "^0.28.18",
-    "typescript": "^6.0.2"
+    "typescript": "^6.0.2",
+    "@changesets/cli": "^2.30.0"
   }
 }

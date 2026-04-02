@@ -52,12 +52,31 @@ npm run docs:api
 
 Output is written to `docs/api`.
 
-## Release readiness
+## Release
+
+Create a changeset whenever you make a user-facing change:
 
 ```bash
-npm run release:prepare
+npm run changeset
+```
+
+When ready to ship — two commands cover the full flow:
+
+```bash
+npm run release:version   # bump versions, update CHANGELOGs, commit
+npm run release:publish   # lint/build/test, publish to npm, tag, push to GitHub
+```
+
+Or in a single command:
+
+```bash
+npm run release
+```
+
+Dry-run (no publish, no version bump):
+
+```bash
 npm run release:dry-run
-npm run release:publish
 ```
 
 GitHub Actions:
@@ -65,7 +84,7 @@ GitHub Actions:
 - `CI` runs `release:prepare` on push and pull requests.
 - `Publish Packages` supports manual dry-run and publish via workflow dispatch.
 
-Detailed maintainer steps are documented in `docs/RELEASE.md`.
+Detailed maintainer steps are in [docs/RELEASE.md](docs/RELEASE.md).
 
 ## Contributing
 
