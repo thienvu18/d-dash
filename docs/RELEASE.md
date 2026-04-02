@@ -1,66 +1,103 @@
 # Release Runbook
 
-This runbook describes how to publish d-dash packages safely.
+This repository uses [Changesets](https://github.com/changesets/changesets) for independent per-package semantic versioning.
 
-## 1. Preconditions
+## Preconditions
 
-1. All intended changes are merged into `main`.
-2. Node.js 18+ and npm are available.
-3. You have npm publish permissions for `@d-dash/*`.
-4. `NPM_TOKEN` is configured for CI publish workflow.
+- All intended changes are merged into `main`.
+- Node.js >=20.19.0 and npm are available.
+- You have npm publish rights for `@d-dash/*`.
+- `NPM_TOKEN` is set in your environment (local) or in GitHub Actions secrets.
 
-## 2. Local validation
+---
 
-Run full release checks:
+## Typical release (2 commands)
 
-```bash
-npm run release:prepare
-```
-
-This verifies:
-
-- lint checks
-- clean build for all packages
-- test suites across core and adapters
-- TypeDoc API docs generation
-- package metadata completeness
-- package version consistency
-
-## 3. Local dry-run publish
+### Step 1 — Bump versions and update changelogs
 
 ```bash
-npm run release:dry-run
+npm run release:version
 ```
 
-This performs publish dry-runs in deterministic order (core first).
+This runs `changeset version`, which:
+- consumes all pending `.changeset/*.md` files
+- bumps each affected package to the correct semver level (patch / minor / major)
+- updates each package's `CHANGELOG.md`
+- removes the consumed changeset files
 
-## 4. GitHub Actions dry-run
+Then stages and commits the result with message `chore(release): version packages`.
 
-Use workflow dispatch for `Publish Packages` with `dry_run=true`.
-
-## 5. Real publish
-
-Option A: local
+### Step 2 — Validate, publish to npm, tag, and push
 
 ```bash
 npm run release:publish
 ```
 
-Option B: GitHub Actions workflow dispatch with `dry_run=false`.
+This runs, in order:
 
-## 6. Post-publish checks
+1. `release:prepare` — lint, clean build, full test suite, TypeDoc, metadata and version consistency checks.
+2. `changeset publish` — publishes each package to npm (in topological order) and creates a git tag per package (e.g. `@d-dash/core@1.2.0`).
+3. `git push --follow-tags origin main` — pushes the version-bump commit and all release tags to GitHub.
 
-1. Confirm package versions are visible on npm.
-2. Update `CHANGELOG.md` if needed.
-3. Tag release in git.
-4. Verify docs links and API docs are accessible.
+### Or as a single command
 
-## 7. Rollback guidance
+```bash
+npm run release
+```
 
-If publish partially fails:
+Chains `release:version` then `release:publish`.
 
-1. Do not republish existing versions.
-2. Fix issue in a new commit.
-3. Bump versions consistently.
-4. Re-run `release:prepare` and `release:dry-run`.
-5. Publish new versions.
+---
+
+## During development — creating changesets
+
+Whenever you make a user-facing change, create a changeset before committing:
+
+```bash
+npm run changeset
+```
+
+Follow the interactive prompt to select affected packages and describe the change type (patch / minor / major). Commit the generated `.changeset/*.md` file alongside your code.
+
+---
+
+## Dry-run (no publish, no version bump)
+
+Validates the full build and simulates npm publish output without touching npm or git:
+
+```bash
+npm run release:dry-run
+```
+
+---
+
+## GitHub releases
+
+After `release:publish` pushes the tags, each `@package@version` tag appears under **Tags** on GitHub. To publish a formal GitHub Release from a tag:
+
+```bash
+gh release create @d-dash/core@1.2.0 --generate-notes
+```
+
+Repeat for each published package, or automate via a GitHub Actions workflow triggered on `push` of tags matching `@d-dash/*`.
+
+---
+
+## What `release:prepare` checks
+
+| Step | Script |
+|---|---|
+| Lint | `eslint .` |
+| Clean build + export verification | `build:release` → `verify:exports` |
+| Test suites | all packages |
+| API docs | `typedoc` |
+| Package metadata completeness | `release:check:metadata` |
+| Cross-package version consistency | `release:check:versions` |
+
+---
+
+## Rollback guidance
+
+1. Do not republish an already-published version — npm rejects it.
+2. Fix the issue in a new commit, create a changeset for it, and re-run the two-step release flow.
+3. If a package was partially published, treat the published version as released and ship a follow-up patch.

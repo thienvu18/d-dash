@@ -1,6 +1,6 @@
 {
   "name": "@d-dash/datasource-victoriametrics",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "VictoriaMetrics datasource adapter for d-dash",
   "license": "LGPL-3.0-or-later",
   "repository": {
@@ -26,7 +26,7 @@
     "test": "npm run build && node --test $(find tests -name '*.spec.js')"
   },
   "peerDependencies": {
-    "@d-dash/core": "^0.1.0"
+    "@d-dash/core": "^0.1.1"
   },
   "keywords": [
     "dashboard",

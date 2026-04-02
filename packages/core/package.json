@@ -1,6 +1,6 @@
 {
   "name": "@d-dash/core",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Headless core runtime and contracts for d-dash",
   "license": "LGPL-3.0-or-later",
   "repository": {
