@@ -133,24 +133,44 @@ export function buildWidgetExecutionRequest(
     { now: input.now },
   );
 
+  const vars = input.context.resolvedVariables;
+
   // Substitute $variableName references in filter string values when resolvedVariables are present.
-  const filters = input.context.resolvedVariables
-    ? substituteVariablesInFilters(
-        input.widget.query.filters,
-        input.context.resolvedVariables,
-      )
+  const filters = vars
+    ? substituteVariablesInFilters(input.widget.query.filters, vars)
     : input.widget.query.filters;
+
+  // Also substitute variables in the metric field so queries like `{ metric: '$host' }` work.
+  const metric =
+    vars && typeof input.widget.query.metric === "string"
+      ? substituteVariableInString(input.widget.query.metric, vars)
+      : input.widget.query.metric;
 
   return {
     dashboardId: input.dashboardId,
     widgetId: input.widget.id,
     datasourceId: input.widget.datasource,
-    query: { ...input.widget.query, filters },
+    query: { ...input.widget.query, metric, filters },
     visualization: input.widget.visualization,
     resolvedTimeRange,
     options: input.widget.options,
     context: input.context,
   };
+}
+
+/**
+ * Substitutes a single `$variableName` reference in a plain string.
+ * Multi-value variables use the first value.
+ */
+function substituteVariableInString(
+  value: string,
+  variables: import("./runtime.js").ResolvedVariables,
+): string {
+  return value.replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, varName: string) => {
+    const resolved = variables[varName];
+    if (resolved === undefined) return `$${varName}`;
+    return Array.isArray(resolved) ? resolved[0] : resolved;
+  });
 }
 
 /**
