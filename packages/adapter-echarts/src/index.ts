@@ -176,9 +176,10 @@ export function dataFramesToGaugeOption(
         min,
         max,
         detail: { formatter: unit ? `{value} ${unit}` : "{value}" },
-        axisLine: axisLineColor
-          ? { lineStyle: { color: axisLineColor } }
-          : undefined,
+        // Only set axisLine when there are explicit color zones; omitting it lets
+        // ECharts use its built-in default ([[1, '#E6EBF8']]), which is required
+        // by GaugeView — it crashes if axisLine.lineStyle.color is undefined.
+        ...(axisLineColor ? { axisLine: { lineStyle: { color: axisLineColor } } } : {}),
         data: [{ name, value }],
         ...((options["gaugeOverrides"] as Record<string, unknown> | undefined) ?? {}),
       },
