@@ -6,6 +6,7 @@ import type { AdapterRegistry } from "./registry";
 import {
   resolveDashboardTimeRange,
   type ResolvedTimeRange,
+  type ResolvedVariables,
   type RuntimeContext,
 } from "./runtime.js";
 import type {
@@ -53,6 +54,12 @@ export type DashboardSession = {
   dashboard: PersistedDashboard;
   dashboardTimeRange: ResolvedTimeRange;
   widgets: PersistedWidget[];
+  /**
+   * Resolved template variable values for the session.
+   * Populated by `resolveVariables()` or `updateVariables()`.
+   * @experimental
+   */
+  resolvedVariables?: ResolvedVariables;
 };
 
 /** Inputs for executing a single widget in a session. */
@@ -125,6 +132,31 @@ export type BoundDashboardSession = {
   mount<TGridTarget = unknown>(
     input: Omit<MountDashboardInput<TGridTarget>, "session">,
   ): Promise<MountDashboardResult>;
+  /**
+   * Updates the resolved variable values for the session and re-executes all widgets.
+   * @experimental
+   */
+  updateVariables(
+    variableValues: Record<string, string | string[]>,
+    context: RuntimeContext,
+  ): Promise<ExecuteWidgetResult[]>;
+};
+
+// ---------------------------------------------------------------------------
+// Snapshot / session serialization
+// ---------------------------------------------------------------------------
+
+/**
+ * A read-only snapshot that captures dashboard definition, cached widget data,
+ * and resolved variables at a point in time. Use `DashboardRuntime.serializeSession`
+ * and `DashboardRuntime.restoreSnapshot` to persist and reload sessions.
+ * @experimental
+ */
+export type SerializedSnapshot = {
+  dashboard: PersistedDashboard;
+  capturedAt: number;
+  widgetData: Record<string, import("./adapters").DataFrame[]>;
+  resolvedVariables?: ResolvedVariables;
 };
 
 /** Structured runtime error union thrown by dashboard runtime APIs. */
@@ -192,6 +224,33 @@ export type DashboardRuntime = {
     input: ExecuteAllWidgetsInput
   ): Promise<ExecuteWidgetResult[]>;
   discoverMetrics(datasourceId?: string): Promise<MetricDefinition[]>;
+  /**
+   * Resolves query-type template variables via their datasource adapter and
+   * returns the full `ResolvedVariables` map merged with any supplied overrides.
+   * Custom and textbox variables use their `default` value (or the override).
+   *
+   * @experimental
+   */
+  resolveVariables(
+    session: DashboardSession,
+    overrides?: Record<string, string | string[]>,
+  ): Promise<ResolvedVariables>;
+  /**
+   * Serializes a session and its cached widget data into a portable snapshot object.
+   * The snapshot can be persisted as JSON and later restored with `restoreSnapshot`.
+   * @experimental
+   */
+  serializeSession(
+    session: DashboardSession,
+    widgetData: Record<string, import("./adapters").DataFrame[]>,
+  ): SerializedSnapshot;
+  /**
+   * Reconstructs a `DashboardSession` from a previously serialized snapshot.
+   * Widget execution is NOT re-run — use the snapshot `widgetData` to hydrate
+   * your visualization adapters directly.
+   * @experimental
+   */
+  restoreSnapshot(snapshot: SerializedSnapshot): DashboardSession;
 };
 
 /** Creates dashboard runtime orchestrator bound to adapter registry and clock/event hooks. */
@@ -400,6 +459,19 @@ export function createDashboardRuntime(
         ): Promise<MountDashboardResult> {
           return runtime.mountDashboard({ ...input, session });
         },
+        async updateVariables(
+          variableValues: Record<string, string | string[]>,
+          context: RuntimeContext,
+        ): Promise<ExecuteWidgetResult[]> {
+          // Merge override values with the current resolved variables.
+          const updated = await runtime.resolveVariables(session, variableValues);
+          // Mutate the session's resolvedVariables in place so subsequent calls see the new values.
+          session.resolvedVariables = updated;
+          return runtime.executeAllWidgets({
+            session,
+            context: { ...context, resolvedVariables: updated },
+          });
+        },
       };
     },
 
@@ -556,6 +628,92 @@ export function createDashboardRuntime(
       }
 
       return dedupeMetrics(allMetrics);
+    },
+
+    async resolveVariables(
+      session: DashboardSession,
+      overrides: Record<string, string | string[]> = {},
+    ): Promise<ResolvedVariables> {
+      const resolved: ResolvedVariables = {};
+
+      for (const variable of session.dashboard.variables ?? []) {
+        const override = overrides[variable.name];
+
+        if (variable.type === "custom") {
+          // Use override if provided, otherwise fall back to default or first option.
+          if (override !== undefined) {
+            resolved[variable.name] = override;
+          } else if (variable.default !== undefined) {
+            resolved[variable.name] = variable.default;
+          } else if (variable.options.length > 0) {
+            resolved[variable.name] = variable.options[0];
+          }
+        } else if (variable.type === "textbox") {
+          resolved[variable.name] =
+            override ?? variable.default ?? "";
+        } else if (variable.type === "query") {
+          if (override !== undefined) {
+            resolved[variable.name] = override;
+          } else {
+            // Execute a lightweight datasource query to resolve variable options.
+            const adapter = options.registry.requireDatasource(variable.datasource);
+            try {
+              const result = await adapter.query(
+                {
+                  metric: variable.query,
+                  timeRange: session.dashboardTimeRange,
+                },
+                { traceId: `var-resolve-${variable.name}` },
+              );
+              // Collect the first string/number field values as the resolved options.
+              const values: string[] = [];
+              for (const frame of result.frames) {
+                for (const field of frame.fields) {
+                  if (field.type === "string" || field.type === "number") {
+                    for (const v of field.values) {
+                      if (v !== null && v !== undefined) {
+                        values.push(String(v));
+                      }
+                    }
+                    break; // Use only the first eligible field.
+                  }
+                }
+              }
+              resolved[variable.name] = variable.multi ? values : (values[0] ?? "");
+            } catch {
+              // Gracefully fall back to empty string on resolution failure.
+              resolved[variable.name] = variable.multi ? [] : "";
+            }
+          }
+        }
+      }
+
+      return { ...resolved, ...overrides };
+    },
+
+    serializeSession(
+      session: DashboardSession,
+      widgetData: Record<string, import("./adapters").DataFrame[]>,
+    ): SerializedSnapshot {
+      return {
+        dashboard: session.dashboard,
+        capturedAt: getNow(),
+        widgetData,
+        resolvedVariables: session.resolvedVariables,
+      };
+    },
+
+    restoreSnapshot(snapshot: SerializedSnapshot): DashboardSession {
+      const validation = this.validateDashboard(snapshot.dashboard);
+      const restoredSession = buildSessionFromValidatedDashboard(
+        validation,
+        snapshot.dashboard,
+        getNow,
+      );
+      return {
+        ...restoredSession,
+        resolvedVariables: snapshot.resolvedVariables,
+      };
     },
   };
 }

@@ -22,9 +22,9 @@
   "scripts": {
     "clean": "node scripts/clean-dist.mjs",
     "build": "npm run build:release",
-    "build:packages": "npm run -w @d-dash/core build && npm run -w @d-dash/adapter-echarts build && npm run -w @d-dash/adapter-gridstack build && npm run -w @d-dash/datasource-rest build && npm run -w @d-dash/datasource-victoriametrics build && npm run -w @d-dash/datasource-grpc build",
+    "build:packages": "npm run -w @d-dash/core build && npm run -w @d-dash/adapter-echarts build && npm run -w @d-dash/adapter-gridstack build && npm run -w @d-dash/adapter-table build && npm run -w @d-dash/datasource-rest build && npm run -w @d-dash/datasource-victoriametrics build && npm run -w @d-dash/datasource-grpc build",
     "build:release": "npm run clean && npm run build:packages && npm run verify:exports",
-    "test": "npm run -w @d-dash/core test && npm run -w @d-dash/adapter-echarts test && npm run -w @d-dash/adapter-gridstack test && npm run -w @d-dash/datasource-rest test && npm run -w @d-dash/datasource-victoriametrics test && npm run -w @d-dash/datasource-grpc test",
+    "test": "npm run -w @d-dash/core test && npm run -w @d-dash/adapter-echarts test && npm run -w @d-dash/adapter-gridstack test && npm run -w @d-dash/adapter-table test && npm run -w @d-dash/datasource-rest test && npm run -w @d-dash/datasource-victoriametrics test && npm run -w @d-dash/datasource-grpc test",
     "typecheck": "npm run build:packages",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

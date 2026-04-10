@@ -31,10 +31,13 @@ registry.registerDatasource(restDatasource);
 registry.registerDatasource(grpcDatasource);
 registry.registerDatasource(victoriaMetricsDatasource);
 
-registry.registerVisualization(echartsTimeseriesAdapter);
-registry.registerVisualization(echartsStatAdapter);
-registry.registerVisualization(textWidgetAdapter);
-registry.registerVisualization(htmlWidgetAdapter);
+// Register all ECharts adapters (timeseries, stat, text, html, gauge, bar, pie, heatmap).
+for (const adapter of createEChartsAdapters({ echarts })) {
+  registry.registerVisualization(adapter);
+}
+
+// Register the DOM-based table adapter.
+registry.registerVisualization(createTableAdapter());
 
 registry.registerGrid(gridstackAdapter);
 
@@ -61,6 +64,7 @@ At load time:
 2. Validate widget and layout cross references.
 3. Validate datasource and visualization identifiers exist in registry.
 4. Validate timeRange inputs.
+5. Optionally validate template variable definitions.
 
 Validation failures should be treated as non-retriable user configuration errors.
 
@@ -77,6 +81,116 @@ Recommended host lifecycle:
 3. bind grid layout changes to visualization resize via runtime
 4. call adapter resize directly only for host-specific events
 5. destroy adapters on unmount
+
+## 6. Template Variables (`@experimental`)
+
+Template variables substitute `$variableName` tokens in widget query filters at execution time.
+
+### Defining variables in the dashboard schema
+
+```json
+{
+  "schemaVersion": 1,
+  "dashboardId": "my-dashboard",
+  "variables": [
+    { "type": "custom", "name": "host", "options": ["web-1", "web-2"], "default": "web-1" },
+    { "type": "query",  "name": "env",  "datasource": "metrics", "query": "environments" },
+    { "type": "textbox","name": "search", "default": "" }
+  ],
+  "widgets": [
+    {
+      "id": "w1",
+      "datasource": "metrics",
+      "query": { "metric": "cpu.usage", "filters": { "host": "$host", "env": "$env" } },
+      "visualization": { "type": "timeseries" }
+    }
+  ]
+}
+```
+
+### Resolving and using variables at runtime
+
+```ts
+const session = runtime.createSession(dashboard);
+
+// Resolve initial variable values (custom/textbox use defaults; query executes datasource).
+const resolvedVariables = await runtime.resolveVariables(session);
+session.resolvedVariables = resolvedVariables;
+
+// Execute widgets — filters will have $host and $env substituted automatically.
+const context = { traceId: "trace-1", resolvedVariables };
+await runtime.executeAllWidgets({ session, context });
+```
+
+### Updating variables (triggering re-render)
+
+```ts
+const bound = runtime.createBoundSession(session);
+bound.registerWidgetTargets({ w1: el1, w2: el2 });
+
+// Re-executes all widgets with the new host value.
+await bound.updateVariables({ host: "web-2" }, { traceId: "trace-2" });
+```
+
+## 7. Crosshair Sync (`@experimental`)
+
+ECharts tooltip crosshairs can be linked across all panels in a dashboard by assigning
+the same group name to every `EChartsTarget` and then calling `connectEChartsGroup`.
+
+```ts
+import { createEChartsAdapters, connectEChartsGroup } from "@d-dash/adapter-echarts";
+import * as echarts from "echarts";
+
+// Register adapters.
+for (const adapter of createEChartsAdapters({ echarts })) {
+  registry.registerVisualization(adapter);
+}
+
+// Pass the same group name on every target.
+runtime.registerWidgetTargets({
+  w1: { el: el1, group: "dashboard-1" },
+  w2: { el: el2, group: "dashboard-1" },
+});
+
+await runtime.mountDashboard({ session, gridId: "gridstack", gridTarget, context });
+
+// Connect charts after all are initialised.
+connectEChartsGroup(echarts, "dashboard-1");
+```
+
+## 8. Session Snapshot / Serialization (`@experimental`)
+
+Capture a point-in-time snapshot of a session and its widget data for sharing or
+offline viewing.
+
+```ts
+// After executing all widgets:
+const widgetData: Record<string, DataFrame[]> = {};
+for (const { widgetId, result } of widgetResults) {
+  widgetData[widgetId] = result.frames;
+}
+
+const snapshot = runtime.serializeSession(session, widgetData);
+const json = JSON.stringify(snapshot); // persist or share
+
+// Later, restore the session (no re-execution needed):
+const restored = runtime.restoreSnapshot(JSON.parse(json));
+```
+
+## 9. Visualization Kinds Reference
+
+| Kind          | Package                     | Status      | Notes                                       |
+|---------------|-----------------------------|-------------|---------------------------------------------|
+| `timeseries`  | `@d-dash/adapter-echarts`   | Stable      | Line chart with time x-axis.                |
+| `stat`        | `@d-dash/adapter-echarts`   | Stable      | Single-value gauge display.                 |
+| `text`        | `@d-dash/adapter-echarts`   | Stable      | Static text/subtitle card.                  |
+| `html`        | `@d-dash/adapter-echarts`   | Stable      | Sanitized HTML content widget.              |
+| `gauge`       | `@d-dash/adapter-echarts`   | Experimental| Full ECharts gauge with min/max/thresholds. |
+| `bar`         | `@d-dash/adapter-echarts`   | Experimental| Vertical or horizontal bar chart.           |
+| `pie`         | `@d-dash/adapter-echarts`   | Experimental| Pie or donut chart.                         |
+| `heatmap`     | `@d-dash/adapter-echarts`   | Experimental| Time × category heatmap.                    |
+| `table`       | `@d-dash/adapter-table`     | Experimental| DOM-based sortable/paginated table.         |
+
 
 Preferred runtime bridge:
 

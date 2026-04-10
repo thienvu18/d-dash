@@ -27,6 +27,7 @@ Optional fields:
 1. meta.description
 2. meta.tags
 3. meta.folder
+4. variables (`@experimental`)
 
 Example shape:
 
@@ -89,7 +90,82 @@ Example shape:
 }
 ```
 
-## 2.3 Persisted Time Range Input
+## 2.3 Persisted Widget `visualization.type` Values
+
+The `visualization.type` field is a string discriminator.  Recognized named values:
+
+| Value          | Status       | Description                      |
+|----------------|--------------|----------------------------------|
+| `timeseries`   | stable       | Line/area time series chart      |
+| `stat`         | stable       | Single-value stat card           |
+| `table`        | stable       | Data table                       |
+| `text`         | stable       | Markdown / plain-text panel      |
+| `html`         | stable       | Raw HTML panel                   |
+| `gauge`        | experimental | Gauge / needle chart             |
+| `bar`          | experimental | Vertical bar chart               |
+| `pie`          | experimental | Pie / donut chart                |
+| `heatmap`      | experimental | Heat-map matrix                  |
+
+Any other string is treated as an unknown kind and forwarded to registered adapters unchanged (open extensibility).
+
+## 2.4 Template Variables (`@experimental`)
+
+Optional top-level `variables` array.  Defines variables that are substituted
+into widget query filter string values using the `$variableName` syntax at
+execution time.
+
+Supported variable types:
+
+| type       | Required fields                    | Optional fields               |
+|------------|------------------------------------|-------------------------------|
+| `custom`   | `name`, `options` (string array)   | `label`, `default`, `multi`   |
+| `query`    | `name`, `datasource`, `query`      | `label`, `multi`              |
+| `textbox`  | `name`                             | `label`, `default`            |
+
+Example:
+
+```json
+{
+  "variables": [
+    {
+      "type": "custom",
+      "name": "host",
+      "label": "Host",
+      "options": ["web-1", "web-2", "db-1"],
+      "default": "web-1"
+    },
+    {
+      "type": "query",
+      "name": "env",
+      "label": "Environment",
+      "datasource": "metrics",
+      "query": "environments"
+    },
+    {
+      "type": "textbox",
+      "name": "search",
+      "label": "Search",
+      "default": ""
+    }
+  ]
+}
+```
+
+Variable reference in widget query filters:
+
+```json
+{ "filters": { "host": "$host", "env": "$env", "search": "$search" } }
+```
+
+Validation rules:
+
+1. `name` must match `/^[a-zA-Z_][a-zA-Z0-9_]*$/`.
+2. Variable names must be unique within the dashboard.
+3. `custom` requires a non-empty `options` array.
+4. `query` requires non-empty `datasource` and `query` strings.
+5. `query.datasource` must reference a known datasource when checked at runtime.
+
+## 2.5 Persisted Time Range Input
 
 Supported authoring forms:
 
@@ -132,9 +208,9 @@ Runtime shape:
 1. dashboardId
 2. widgetId
 3. datasourceId
-4. query
+4. query (with filter values substituted when `resolvedVariables` is present)
 5. resolvedTimeRange
-6. context (traceId, abort signal, optional feature flags)
+6. context (traceId, abort signal, optional feature flags, optional `resolvedVariables`)
 
 ## 3.3 Datasource Result Envelope
 
@@ -171,6 +247,9 @@ A dashboard is valid only if all conditions are true:
 7. each widget.visualization.type exists in registry at runtime load.
 8. metric and visualization compatibility check passes when metric metadata exists.
 9. timeRange inputs are structurally valid.
+10. variable names match `/^[a-zA-Z_][a-zA-Z0-9_]*$/` and are unique.
+11. `custom` variables have a non-empty `options` array.
+12. `query` variables have non-empty `datasource` and `query` strings, and the datasource is registered.
 
 ## 6. Compatibility and Extensibility
 

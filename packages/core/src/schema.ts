@@ -45,6 +45,10 @@ export type VisualizationKind =
   | "table"
   | "text"
   | "html"
+  | "gauge"
+  | "bar"
+  | "pie"
+  | "heatmap"
   | (string & {});
 
 /** Persisted visualization configuration for a widget. */
@@ -64,6 +68,57 @@ export type PersistedWidget = {
   options?: JsonObject;
 };
 
+// ---------------------------------------------------------------------------
+// Template variables
+// ---------------------------------------------------------------------------
+
+/**
+ * A custom (static) template variable with a fixed list of options.
+ * @experimental
+ */
+export type PersistedCustomVariable = {
+  type: "custom";
+  name: string;
+  label?: string;
+  options: string[];
+  default?: string;
+  multi?: boolean;
+};
+
+/**
+ * A query-backed template variable resolved by a datasource at runtime.
+ * @experimental
+ */
+export type PersistedQueryVariable = {
+  type: "query";
+  name: string;
+  label?: string;
+  datasource: string;
+  query: string;
+  multi?: boolean;
+};
+
+/**
+ * A free-text input template variable.
+ * @experimental
+ */
+export type PersistedTextboxVariable = {
+  type: "textbox";
+  name: string;
+  label?: string;
+  default?: string;
+};
+
+/**
+ * Union of all persisted variable kinds supported by d-dash.
+ * Add persisted dashboard `variables` to enable template variable substitution.
+ * @experimental
+ */
+export type PersistedVariable =
+  | PersistedCustomVariable
+  | PersistedQueryVariable
+  | PersistedTextboxVariable;
+
 /** Top-level persisted dashboard contract. */
 export type PersistedDashboard = {
   schemaVersion: SchemaVersion;
@@ -72,6 +127,12 @@ export type PersistedDashboard = {
   timeRange: PersistedTimeRange;
   layout: LayoutItem[];
   widgets: PersistedWidget[];
+  /**
+   * Optional template variables. Values are resolved at session creation time
+   * and substituted into widget query filters using $variableName syntax.
+   * @experimental
+   */
+  variables?: PersistedVariable[];
   extensions?: Record<string, JsonValue>;
 };
 

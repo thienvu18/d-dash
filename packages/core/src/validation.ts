@@ -16,7 +16,11 @@ export type ValidationIssueCode =
   | "DATASOURCE_NOT_FOUND"
   | "VISUALIZATION_NOT_FOUND"
   | "METRIC_NOT_FOUND"
-  | "METRIC_VISUALIZATION_MISMATCH";
+  | "METRIC_VISUALIZATION_MISMATCH"
+  | "VARIABLE_NAME_DUPLICATE"
+  | "VARIABLE_DATASOURCE_NOT_FOUND"
+  | "VARIABLE_INVALID"
+  | "VARIABLE_CIRCULAR_DEPENDENCY";
 
 /** Single dashboard validation issue entry. */
 export type ValidationIssue = {
@@ -200,6 +204,145 @@ export function validatePersistedDashboard(
 
     if (widget.timeRange) {
       validateTimeRange(widget.timeRange, `${pathPrefix}.timeRange`, issues);
+    }
+  }
+
+  // Validate template variables when present.
+  if (Array.isArray(dashboard.variables)) {
+    const variableNames = new Set<string>();
+    for (let i = 0; i < dashboard.variables.length; i += 1) {
+      const variable = dashboard.variables[i];
+      const varPath = `variables[${i}]`;
+
+      if (!isNonEmptyString(variable.name)) {
+        issues.push({
+          code: "VARIABLE_INVALID",
+          path: `${varPath}.name`,
+          message: "Variable name must be a non-empty string.",
+        });
+        continue;
+      }
+
+      if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(variable.name)) {
+        issues.push({
+          code: "VARIABLE_INVALID",
+          path: `${varPath}.name`,
+          message: `Variable name '${variable.name}' must start with a letter or underscore and contain only alphanumeric characters or underscores.`,
+        });
+        continue;
+      }
+
+      if (variableNames.has(variable.name)) {
+        issues.push({
+          code: "VARIABLE_NAME_DUPLICATE",
+          path: `${varPath}.name`,
+          message: `Duplicate variable name '${variable.name}'.`,
+        });
+        continue;
+      }
+
+      variableNames.add(variable.name);
+
+      if (variable.type === "custom" && !Array.isArray(variable.options)) {
+        issues.push({
+          code: "VARIABLE_INVALID",
+          path: `${varPath}.options`,
+          message: `Custom variable '${variable.name}' must have an options array.`,
+        });
+      }
+
+      if (variable.type === "query") {
+        if (!isNonEmptyString(variable.datasource)) {
+          issues.push({
+            code: "VARIABLE_INVALID",
+            path: `${varPath}.datasource`,
+            message: `Query variable '${variable.name}' must specify a datasource.`,
+          });
+        } else if (
+          knownDatasourceSet.size > 0 &&
+          !knownDatasourceSet.has(variable.datasource)
+        ) {
+          issues.push({
+            code: "VARIABLE_DATASOURCE_NOT_FOUND",
+            path: `${varPath}.datasource`,
+            message: `datasource '${variable.datasource}' referenced by variable '${variable.name}' is not registered.`,
+          });
+        }
+
+        if (!isNonEmptyString(variable.query)) {
+          issues.push({
+            code: "VARIABLE_INVALID",
+            path: `${varPath}.query`,
+            message: `Query variable '${variable.name}' must specify a query string.`,
+          });
+        }
+      }
+    }
+
+    // Detect circular dependencies: a query variable whose query string references
+    // another variable that eventually references it back via $varName substitution.
+    if (dashboard.variables.length > 1) {
+      // Build adjacency map: variable name → set of variable names it depends on.
+      const deps = new Map<string, Set<string>>();
+      for (const variable of dashboard.variables) {
+        if (!variableNames.has(variable.name)) {
+          // Skip variables that failed earlier name validation.
+          continue;
+        }
+        const refs = new Set<string>();
+        if (variable.type === "query" && isNonEmptyString(variable.query)) {
+          const refPattern = /\$([a-zA-Z_][a-zA-Z0-9_]*)/g;
+          let m: RegExpExecArray | null;
+          while ((m = refPattern.exec(variable.query)) !== null) {
+            const refName = m[1];
+            // Only track edges to other known variables, not self-references.
+            if (variableNames.has(refName) && refName !== variable.name) {
+              refs.add(refName);
+            }
+          }
+        }
+        deps.set(variable.name, refs);
+      }
+
+      // DFS cycle detection using an explicit path stack.
+      // Nodes whose name appears on the active stack path when revisited form a cycle.
+      const visited = new Set<string>();
+      const stack: string[] = [];
+      const stackSet = new Set<string>();
+      const cycleNodes = new Set<string>();
+
+      const detectCycle = (name: string): void => {
+        if (visited.has(name)) return;
+        if (stackSet.has(name)) {
+          // Back edge: record all nodes from the cycle entry point to the stack top.
+          const cycleStart = stack.indexOf(name);
+          for (let ci = cycleStart; ci < stack.length; ci += 1) {
+            cycleNodes.add(stack[ci]);
+          }
+          return;
+        }
+        stack.push(name);
+        stackSet.add(name);
+        for (const dep of deps.get(name) ?? []) {
+          detectCycle(dep);
+        }
+        stack.pop();
+        stackSet.delete(name);
+        visited.add(name);
+      };
+
+      for (const name of deps.keys()) {
+        detectCycle(name);
+      }
+
+      for (const varName of cycleNodes) {
+        const idx = dashboard.variables.findIndex((v) => v.name === varName);
+        issues.push({
+          code: "VARIABLE_CIRCULAR_DEPENDENCY",
+          path: `variables[${idx}].query`,
+          message: `Variable '${varName}' participates in a circular dependency.`,
+        });
+      }
     }
   }
 

@@ -133,16 +133,54 @@ export function buildWidgetExecutionRequest(
     { now: input.now },
   );
 
+  // Substitute $variableName references in filter string values when resolvedVariables are present.
+  const filters = input.context.resolvedVariables
+    ? substituteVariablesInFilters(
+        input.widget.query.filters,
+        input.context.resolvedVariables,
+      )
+    : input.widget.query.filters;
+
   return {
     dashboardId: input.dashboardId,
     widgetId: input.widget.id,
     datasourceId: input.widget.datasource,
-    query: input.widget.query,
+    query: { ...input.widget.query, filters },
     visualization: input.widget.visualization,
     resolvedTimeRange,
     options: input.widget.options,
     context: input.context,
   };
+}
+
+/**
+ * Substitutes `$variableName` occurrences in filter string values.
+ * Multi-value variables are joined with a comma.
+ * Non-string filter values are left unchanged.
+ */
+function substituteVariablesInFilters(
+  filters: import("./json").JsonObject | undefined,
+  variables: import("./runtime.js").ResolvedVariables,
+): import("./json").JsonObject | undefined {
+  if (!filters) {
+    return filters;
+  }
+
+  const result: import("./json").JsonObject = {};
+  for (const [key, value] of Object.entries(filters)) {
+    if (typeof value === "string") {
+      result[key] = value.replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, varName: string) => {
+        const resolved = variables[varName];
+        if (resolved === undefined) {
+          return `$${varName}`;
+        }
+        return Array.isArray(resolved) ? resolved.join(",") : resolved;
+      });
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
 }
 
 class DatasourceQueryException extends Error implements DDashError {

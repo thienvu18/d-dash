@@ -1,0 +1,41 @@
+{
+  "name": "@d-dash/adapter-table",
+  "version": "0.1.0",
+  "description": "DOM-based table visualization adapter for d-dash",
+  "license": "LGPL-3.0-or-later",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/thienvu18/d-dash.git",
+    "directory": "packages/adapter-table"
+  },
+  "bugs": {
+    "url": "https://github.com/thienvu18/d-dash/issues"
+  },
+  "homepage": "https://github.com/thienvu18/d-dash/tree/main/packages/adapter-table#readme",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "test": "npm run build && node --test $(find tests -name '*.spec.js')"
+  },
+  "peerDependencies": {
+    "@d-dash/core": "^0.2.0"
+  },
+  "keywords": [
+    "dashboard",
+    "table",
+    "adapter",
+    "d-dash"
+  ],
+  "files": [
+    "dist",
+    "README.md"
+  ]
+}

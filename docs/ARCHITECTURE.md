@@ -6,7 +6,7 @@ This document defines the runtime architecture and ownership boundaries for d-da
 
 1. Keep core runtime headless and framework-agnostic.
 2. Keep persisted schema portable and JSON-only.
-3. Enable adapters for gridstack.js, ECharts (timeseries/stat/text/html), REST, gRPC, and VictoriaMetrics.
+3. Enable adapters for gridstack.js, ECharts (timeseries/stat/text/html/gauge/bar/pie/heatmap), REST, gRPC, and VictoriaMetrics.
 4. Keep extension points stable for open-source contributors.
 
 ## 2. Layered Architecture
@@ -110,6 +110,11 @@ Examples:
 - supportsTextWidget
 - supportsHtmlWidget
 - supportsTheming
+- supportsGauge (`@experimental`)
+- supportsBar (`@experimental`)
+- supportsPie (`@experimental`)
+- supportsHeatmap (`@experimental`)
+- supportsTable (`@experimental`)
 
 3. Grid capabilities
 
@@ -135,6 +140,20 @@ Expected mapping:
 2. Update path for data refresh and option change.
 3. Resize path wired to container/grid events.
 4. Text/HTML widget types implemented as visualization variants.
+
+First-party ECharts adapters:
+- `timeseries` — line chart with time x-axis
+- `stat` — single-value gauge display
+- `text` — static text card
+- `html` — sanitized HTML content
+- `gauge` — configurable gauge with min/max/thresholds (`@experimental`)
+- `bar` — vertical/horizontal bar chart with optional stacking/thresholds (`@experimental`)
+- `pie` — pie or donut chart (`@experimental`)
+- `heatmap` — time × category heatmap with visualMap (`@experimental`)
+
+Crosshair sync: set `EChartsTarget.group` to a shared name and call
+`connectEChartsGroup(echarts, groupName)` after all adapters are initialised.
+(`@experimental`)
 
 ### 7.3 REST Datasource
 

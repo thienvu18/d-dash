@@ -12,6 +12,13 @@ export type ResolvedTimeRange = {
   source: "dashboard" | "widget";
 };
 
+/**
+ * Resolved template variable values keyed by variable name.
+ * Multi-value variables hold a string array; single-value variables hold a string.
+ * @experimental
+ */
+export type ResolvedVariables = Record<string, string | string[]>;
+
 /** Runtime context forwarded through query and render paths. */
 export type RuntimeContext = {
   traceId: string;
@@ -19,6 +26,12 @@ export type RuntimeContext = {
   cancellation?: {
     isCancelled: boolean;
   };
+  /**
+   * Resolved template variable values. When present, `$variableName` occurrences
+   * in widget query filter string values are substituted before execution.
+   * @experimental
+   */
+  resolvedVariables?: ResolvedVariables;
 };
 
 /** Execution-ready widget request built from persisted and resolved contracts. */

@@ -6,8 +6,12 @@ export type {
   DashboardMeta,
   LayoutItem,
   MetricDefinition,
+  PersistedCustomVariable,
   PersistedDashboard,
+  PersistedQueryVariable,
+  PersistedTextboxVariable,
   PersistedTimeRange,
+  PersistedVariable,
   PersistedWidget,
   SchemaVersion,
   VisualizationKind,
@@ -28,6 +32,7 @@ export {
 
 export type {
   ResolvedTimeRange,
+  ResolvedVariables,
   ResolvedWidgetExecutionRequest,
   RuntimeContext,
   RuntimeWidget,
@@ -89,7 +94,6 @@ export type {
   ValidationIssueCode,
   ValidationResult,
 } from "./validation";
-
 export {
   toSchemaValidationError,
   validatePersistedDashboard,
@@ -110,6 +114,7 @@ export type {
   MountDashboardResult,
   RuntimeEvent,
   RuntimeEventHandler,
+  SerializedSnapshot,
 } from "./dashboard-runtime";
 
 export { createDashboardRuntime } from "./dashboard-runtime.js";

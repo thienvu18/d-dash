@@ -87,6 +87,14 @@ export type VisualizationCapabilities = {
   supportsHtmlWidget?: boolean;
   supportsTheming?: boolean;
   supportsResize?: boolean;
+  /** @experimental */
+  supportsGauge?: boolean;
+  /** @experimental */
+  supportsBar?: boolean;
+  /** @experimental */
+  supportsPie?: boolean;
+  /** @experimental */
+  supportsHeatmap?: boolean;
 };
 
 /** Render request envelope passed to visualization adapters. */
