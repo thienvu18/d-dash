@@ -1,5 +1,11 @@
 # @d-dash/adapter-html
 
+## 0.1.1
+
+### Patch Changes
+
+- adjust style
+
 ## 0.1.0
 
 ### Minor Changes

@@ -336,12 +336,20 @@ export function widgetOptionsToTextContent(
     typeof options["subtext"] === "string" ? options["subtext"] : "";
 
   const parts: string[] = [];
+  parts.push(
+    `<div style="padding: 16px; display: flex; flex-direction: column; gap: 8px; height: 100%; box-sizing: border-box; overflow-y: auto; justify-content: center; align-items: center; text-align: center;">`
+  );
   if (text) {
-    parts.push(`<p class="ddash-text-primary">${escapeHtml(text)}</p>`);
+    parts.push(
+      `<div class="ddash-text-primary" style="font-size: 28px; font-weight: 600; color: inherit; margin: 0; line-height: 1.2;">${escapeHtml(text)}</div>`
+    );
   }
   if (subtext) {
-    parts.push(`<p class="ddash-text-subtext">${escapeHtml(subtext)}</p>`);
+    parts.push(
+      `<div class="ddash-text-subtext" style="font-size: 14px; opacity: 0.7; margin: 0;">${escapeHtml(subtext)}</div>`
+    );
   }
+  parts.push(`</div>`);
   return parts.join("\n");
 }
 
@@ -394,7 +402,9 @@ function makeHtmlAdapter(
         (request.options as Record<string, unknown> | undefined) ?? {};
 
       if (kind === "html") {
-        target.el.innerHTML = widgetOptionsToHtmlContent(opts, resolve);
+        const content = widgetOptionsToHtmlContent(opts, resolve);
+        // Wrap in a padded, scrollable container so content never abuts the widget edge.
+        target.el.innerHTML = `<div style="padding: 12px; height: 100%; box-sizing: border-box; overflow-y: auto;">${content}</div>`;
       } else {
         // text: entity-escaped — no sanitizer needed.
         target.el.innerHTML = widgetOptionsToTextContent(opts);

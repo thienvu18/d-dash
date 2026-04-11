@@ -1,6 +1,6 @@
 {
   "name": "@d-dash/adapter-html",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Secure HTML and text visualization adapters for d-dash",
   "license": "LGPL-3.0-or-later",
   "repository": {

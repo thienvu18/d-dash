@@ -181,9 +181,10 @@ export function createTableAdapter(): VisualizationAdapter<TableTarget> {
       const vsHeaderRow = vsThead.insertRow();
       for (const field of allFields) {
         const th = document.createElement("th");
-        th.style.textAlign = "left";
-        th.style.padding = "4px 8px";
-        th.style.borderBottom = "1px solid #ccc";
+        th.style.textAlign = "center";
+        th.style.padding = "12px 16px";
+        th.style.borderBottom = "1px solid rgba(128, 128, 128, 0.2)";
+        th.style.color = "inherit";
         if (columnWidths[field.name]) {
           th.style.width = `${columnWidths[field.name]}px`;
         }
@@ -193,8 +194,12 @@ export function createTableAdapter(): VisualizationAdapter<TableTarget> {
           btn.style.background = "none";
           btn.style.border = "none";
           btn.style.cursor = "pointer";
-          btn.style.fontWeight = "bold";
+          btn.style.fontWeight = "600";
           btn.style.padding = "0";
+          btn.style.color = "inherit";
+          btn.style.display = "flex";
+          btn.style.alignItems = "center";
+          btn.style.gap = "4px";
           const indicator = s.sortCol === field.name ? (s.sortAsc ? " ▲" : " ▼") : "";
           btn.textContent = field.name + indicator;
           btn.addEventListener("click", () => {
@@ -227,8 +232,8 @@ export function createTableAdapter(): VisualizationAdapter<TableTarget> {
         const tr = vsTbody.insertRow();
         for (const cell of row) {
           const td = tr.insertCell();
-          td.style.padding = "4px 8px";
-          td.style.borderBottom = "1px solid #eee";
+          td.style.padding = "12px 16px";
+          td.style.borderBottom = "1px solid rgba(128, 128, 128, 0.1)";
           td.textContent = cell === null || cell === undefined ? "" : String(cell);
         }
       }
@@ -274,8 +279,9 @@ export function createTableAdapter(): VisualizationAdapter<TableTarget> {
     for (const field of allFields) {
       const th = document.createElement("th");
       th.style.textAlign = "left";
-      th.style.padding = "4px 8px";
-      th.style.borderBottom = "1px solid #ccc";
+      th.style.padding = "12px 16px";
+      th.style.borderBottom = "1px solid rgba(128, 128, 128, 0.2)";
+      th.style.color = "inherit";
       if (columnWidths[field.name]) {
         th.style.width = `${columnWidths[field.name]}px`;
       }
@@ -286,8 +292,12 @@ export function createTableAdapter(): VisualizationAdapter<TableTarget> {
         btn.style.background = "none";
         btn.style.border = "none";
         btn.style.cursor = "pointer";
-        btn.style.fontWeight = "bold";
+        btn.style.fontWeight = "600";
         btn.style.padding = "0";
+        btn.style.color = "inherit";
+        btn.style.display = "flex";
+        btn.style.alignItems = "center";
+        btn.style.gap = "4px";
         const indicator =
           s.sortCol === field.name ? (s.sortAsc ? " ▲" : " ▼") : "";
         // Text content only — prevents XSS.
@@ -316,23 +326,34 @@ export function createTableAdapter(): VisualizationAdapter<TableTarget> {
       const tr = tbody.insertRow();
       for (const cell of row) {
         const td = tr.insertCell();
-        td.style.padding = "4px 8px";
-        td.style.borderBottom = "1px solid #eee";
+        td.style.padding = "12px 16px";
+        td.style.borderBottom = "1px solid rgba(128, 128, 128, 0.1)";
         // Use textContent to avoid XSS — values are data, not markup.
         td.textContent = cell === null || cell === undefined ? "" : String(cell);
       }
     }
 
-    // Pagination controls.
+    // Render: table in a flex-grow scrollable wrapper; pagination pinned at bottom.
     target.el.innerHTML = "";
-    target.el.appendChild(table);
+    target.el.style.display = "flex";
+    target.el.style.flexDirection = "column";
+    target.el.style.height = "100%";
+
+    const tableWrapper = document.createElement("div");
+    tableWrapper.style.flex = "1";
+    tableWrapper.style.minHeight = "0";
+    tableWrapper.style.overflowY = "auto";
+    tableWrapper.appendChild(table);
+    target.el.appendChild(tableWrapper);
 
     if (pagination && totalPages > 1) {
       const controls = document.createElement("div");
-      controls.style.marginTop = "4px";
       controls.style.display = "flex";
       controls.style.gap = "8px";
       controls.style.alignItems = "center";
+      controls.style.flexShrink = "0";
+      controls.style.padding = "6px 8px";
+      controls.style.borderTop = "1px solid #ccc";
 
       const prevBtn = document.createElement("button");
       prevBtn.type = "button";
