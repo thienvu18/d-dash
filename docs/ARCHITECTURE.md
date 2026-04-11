@@ -6,8 +6,9 @@ This document defines the runtime architecture and ownership boundaries for d-da
 
 1. Keep core runtime headless and framework-agnostic.
 2. Keep persisted schema portable and JSON-only.
-3. Enable adapters for gridstack.js, ECharts (timeseries/gauge/bar/pie/heatmap), HTML (text/html), REST, gRPC, and VictoriaMetrics.
+3. Enable adapters for gridstack.js, ECharts (timeseries/gauge/bar/pie/heatmap), HTML (text/html), Table (DOM-based), REST, gRPC, and VictoriaMetrics.
 4. Keep extension points stable for open-source contributors.
+5. Provide a typed authoring SDK (`@d-dash/builder`) for programmatic dashboard generation.
 
 ## 2. Layered Architecture
 
@@ -160,7 +161,15 @@ Crosshair sync: set `EChartsTarget.group` to a shared name and call
 `connectEChartsGroup(echarts, groupName)` after all adapters are initialised.
 (`@experimental`)
 
-### 7.4 REST Datasource
+### 7.4 Table Adapter
+
+Expected mapping:
+
+1. Maps normalized DataFrame output into a DOM-based `<table>` element.
+2. Handles client-side scaling through either virtual scrolling or explicit pagination.
+3. Provides native DOM sorting logic without requiring re-execution of queries.
+
+### 7.5 REST Datasource
 
 Expected mapping:
 
@@ -184,7 +193,12 @@ Expected mapping:
 2. Timeseries labels/values to DataFrame fields.
 3. Range/instant query compatibility handling.
 
-## 8. Security and Safety Boundaries
+## 8. Authoring Layer (Builder SDK)
+
+The `@d-dash/builder` package provides a programmatic, type-safe API for constructing JSON dashboard schemas dynamically.
+It eliminates handwritten JSON creation while strictly targeting the persisted dashboard specification boundary.
+
+## 9. Security and Safety Boundaries
 
 1. HTML widget rendering must be treated as untrusted input.
 2. Sanitization policy must be defined before HTML widget support is enabled.
@@ -201,13 +215,13 @@ Core runtime should emit structured execution events:
 
 These events support debugging and plugin conformance checks.
 
-## 10. Non-Goals for Core Runtime
+## 11. Non-Goals for Core Runtime
 
 1. Core does not implement UI framework rendering primitives.
 2. Core does not embed chart or grid library behavior.
 3. Core does not own application auth/session state.
 
-## 11. Evolution Rules
+## 12. Evolution Rules
 
 1. Stable boundaries in this document must align with CONTRACTS.md.
 2. Changes to stable architecture contracts require migration and changelog updates.

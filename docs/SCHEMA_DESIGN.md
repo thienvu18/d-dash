@@ -27,7 +27,9 @@ Optional fields:
 1. meta.description
 2. meta.tags
 3. meta.folder
-4. variables (`@experimental`)
+4. meta.tenant
+5. variables (`@experimental`)
+6. extensions
 
 Example shape:
 
@@ -163,6 +165,7 @@ Validation rules:
 3. `custom` requires a non-empty `options` array.
 4. `query` requires non-empty `datasource` and `query` strings.
 5. `query.datasource` must reference a known datasource when checked at runtime.
+6. `query` variable queries can contain `$variableName` syntax to enable chained variable resolution.
 
 ## 2.5 Persisted Time Range Input
 

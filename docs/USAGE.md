@@ -89,7 +89,7 @@ Recommended host lifecycle:
 
 ## 6. Template Variables (`@experimental`)
 
-Template variables substitute `$variableName` tokens in widget query filters at execution time.
+Template variables substitute `$variableName` tokens in widget query filters and other query variable queries at execution time, enabling chained variables.
 
 ### Defining variables in the dashboard schema
 
@@ -197,7 +197,7 @@ const restored = runtime.restoreSnapshot(JSON.parse(json));
 | `heatmap`     | `@d-dash/adapter-echarts`   | Stable      | Time × category heatmap.                    |
 | `text`        | `@d-dash/adapter-html`      | Stable      | Static text/subtitle card (no XSS risk).    |
 | `html`        | `@d-dash/adapter-html`      | Stable      | Sanitized HTML content widget.              |
-| `table`       | `@d-dash/adapter-table`     | Experimental| DOM-based sortable/paginated table.         |
+| `table`       | `@d-dash/adapter-table`     | Stable      | DOM-based sortable/paginated table.         |
 
 
 Preferred runtime bridge:

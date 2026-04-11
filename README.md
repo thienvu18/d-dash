@@ -6,6 +6,7 @@ Contract-first embeddable dashboard engine with a headless core and pluggable ad
 
 - Headless runtime (`@d-dash/core`) with typed contracts
 - First-party adapters for ECharts, HTML, Gridstack, Table, REST, VictoriaMetrics, and gRPC
+- Builder SDK (`@d-dash/builder`) for fully typed programmatic dashboard generation
 - Persisted JSON schema separated from runtime-resolved execution model
 - Structured error model and adapter capability declarations
 

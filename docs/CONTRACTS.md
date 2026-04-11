@@ -80,7 +80,7 @@ Rule: avoid throwing untyped string errors in public contract paths.
 The architecture must support first-party integrations without contract exceptions:
 
 1. Grid: gridstack.js.
-2. Visualization: ECharts, including text and html widget types.
+2. Visualization: ECharts, HTML adapter (text/html), and DOM-based Table adapter.
 3. Datasources: REST, gRPC, VictoriaMetrics.
 
 If an adapter needs a contract exception, update this document before implementation workaround.
