@@ -44,11 +44,6 @@ export type EChartsTarget = {
 export type EChartsAdapterOptions = {
   /** The echarts module (injected for testability). */
   echarts: typeof echarts;
-  /**
-   * Optional sanitizer for html widget content.
-   * If omitted, a conservative built-in sanitizer is used.
-   */
-  sanitizeHtml?: (rawHtml: string) => string;
 };
 
 // ---------------------------------------------------------------------------
@@ -99,41 +94,6 @@ export function dataFramesToTimeseriesOption(
     xAxis: { type: "time" },
     yAxis: { type: "value" },
     series,
-    ...options,
-  };
-}
-
-/**
- * Converts DataFrames to an ECharts option for `stat` widgets.
- * Reads the last value of the first numeric field across all frames.
- */
-export function dataFramesToStatOption(
-  frames: DataFrame[],
-  options: Record<string, unknown> = {},
-): Record<string, unknown> {
-  let value: unknown = null;
-  let name = "";
-
-  outer: for (const frame of frames) {
-    for (const field of frame.fields) {
-      if (field.type === "number" && field.values.length > 0) {
-        value = field.values[field.values.length - 1];
-        name = field.name;
-        break outer;
-      }
-    }
-  }
-
-  return {
-    series: [
-      {
-        type: "gauge",
-        data: [{ name, value }],
-        ...((options["gaugeOverrides"] as
-          | Record<string, unknown>
-          | undefined) ?? {}),
-      },
-    ],
     ...options,
   };
 }
@@ -369,57 +329,6 @@ export function dataFramesToHeatmapOption(
   };
 }
 
-/**
- * Converts widget options to an ECharts graphic/title option for `text` widgets.
- * The text content is read from `options.text`; data frames are ignored.
- */
-export function widgetOptionsToTextOption(
-  options: Record<string, unknown> = {},
-): Record<string, unknown> {
-  const text = typeof options["text"] === "string" ? options["text"] : "";
-  const subtext =
-    typeof options["subtext"] === "string" ? options["subtext"] : undefined;
-
-  return {
-    title: {
-      text,
-      subtext,
-      left: "center",
-      top: "center",
-      textStyle: {
-        fontSize: 16,
-        ...((options["textStyle"] as Record<string, unknown> | undefined) ??
-          {}),
-      },
-    },
-    xAxis: { show: false },
-    yAxis: { show: false },
-    series: [],
-    ...options,
-  };
-}
-
-/**
- * Resolves and sanitizes html content for `html` widgets.
- * The sanitized string is intended for host-controlled rendering.
- */
-export function widgetOptionsToHtmlContent(
-  options: Record<string, unknown> = {},
-  sanitizeHtml: (rawHtml: string) => string = defaultSanitizeHtml,
-): string {
-  const raw = typeof options["html"] === "string" ? options["html"] : "";
-  return sanitizeHtml(raw);
-}
-
-function defaultSanitizeHtml(rawHtml: string): string {
-  // Minimal baseline sanitization. Host apps can provide a stricter sanitizer.
-  return rawHtml
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, "")
-    .replace(/\son\w+\s*=\s*(["']).*?\1/gi, "")
-    .replace(/\son\w+\s*=\s*[^\s>]+/gi, "")
-    .replace(/javascript:/gi, "");
-}
-
 // ---------------------------------------------------------------------------
 // Threshold helpers
 // ---------------------------------------------------------------------------
@@ -478,9 +387,6 @@ function buildGaugeColorZones(
 
 const CAPABILITIES: VisualizationCapabilities = {
   supportsTimeSeries: true,
-  supportsStat: true,
-  supportsTextWidget: true,
-  supportsHtmlWidget: true,
   supportsResize: true,
   supportsGauge: true,
   supportsBar: true,
@@ -491,9 +397,6 @@ const CAPABILITIES: VisualizationCapabilities = {
 /** All visualization kinds supported by the ECharts adapter factory. */
 type EChartsKind =
   | "timeseries"
-  | "stat"
-  | "text"
-  | "html"
   | "gauge"
   | "bar"
   | "pie"
@@ -518,9 +421,6 @@ export function createEChartsAdapters(
 ): VisualizationAdapter<EChartsTarget>[] {
   return [
     makeEChartsAdapter("timeseries", adapterOptions),
-    makeEChartsAdapter("stat", adapterOptions),
-    makeEChartsAdapter("text", adapterOptions),
-    makeEChartsAdapter("html", adapterOptions),
     makeEChartsAdapter("gauge", adapterOptions),
     makeEChartsAdapter("bar", adapterOptions),
     makeEChartsAdapter("pie", adapterOptions),
@@ -556,10 +456,6 @@ function makeEChartsAdapter(
     capabilities: CAPABILITIES,
 
     init(target: EChartsTarget): void {
-      if (kind === "html") {
-        return;
-      }
-
       // Idempotent — safe to call multiple times on the same element.
       if (instances.has(target.el)) {
         return;
@@ -573,17 +469,6 @@ function makeEChartsAdapter(
     },
 
     render(request: VisualizationRenderRequest, target: EChartsTarget): void {
-      if (kind === "html") {
-        const opts =
-          (request.options as Record<string, unknown> | undefined) ?? {};
-        const sanitizedHtml = widgetOptionsToHtmlContent(
-          opts,
-          adapterOptions.sanitizeHtml,
-        );
-        target.el.innerHTML = sanitizedHtml;
-        return;
-      }
-
       // Auto-init if the host did not call init() explicitly.
       if (!instances.has(target.el)) {
         this.init!(target);
@@ -596,37 +481,25 @@ function makeEChartsAdapter(
 
       if (kind === "timeseries") {
         option = dataFramesToTimeseriesOption(request.frames, opts);
-      } else if (kind === "stat") {
-        option = dataFramesToStatOption(request.frames, opts);
       } else if (kind === "gauge") {
         option = dataFramesToGaugeOption(request.frames, opts);
       } else if (kind === "bar") {
         option = dataFramesToBarOption(request.frames, opts);
       } else if (kind === "pie") {
         option = dataFramesToPieOption(request.frames, opts);
-      } else if (kind === "heatmap") {
-        option = dataFramesToHeatmapOption(request.frames, opts);
       } else {
-        // text
-        option = widgetOptionsToTextOption(opts);
+        // heatmap
+        option = dataFramesToHeatmapOption(request.frames, opts);
       }
 
       chart.setOption(option, /* notMerge */ true);
     },
 
     resize(target: EChartsTarget): void {
-      if (kind === "html") {
-        return;
-      }
       instances.get(target.el)?.resize();
     },
 
     destroy(target: EChartsTarget): void {
-      if (kind === "html") {
-        target.el.innerHTML = "";
-        return;
-      }
-
       const chart = instances.get(target.el);
       if (chart) {
         chart.dispose();

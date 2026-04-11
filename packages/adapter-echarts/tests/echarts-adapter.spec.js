@@ -5,13 +5,10 @@ import {
   createEChartsAdapters,
   connectEChartsGroup,
   dataFramesToTimeseriesOption,
-  dataFramesToStatOption,
   dataFramesToGaugeOption,
   dataFramesToBarOption,
   dataFramesToPieOption,
   dataFramesToHeatmapOption,
-  widgetOptionsToTextOption,
-  widgetOptionsToHtmlContent,
 } from "../dist/index.js";
 
 /** Builds a mock ECharts factory and records all calls. */
@@ -51,18 +48,18 @@ function makeContext() {
 // ---------------------------------------------------------------------------
 
 describe("createEChartsAdapters", () => {
-  test("returns eight adapters for all supported kinds", () => {
+  test("returns five adapters for all supported kinds", () => {
     const { factory } = makeEChartsFactory();
     const adapters = createEChartsAdapters({ echarts: factory });
 
-    assert.equal(adapters.length, 8);
+    assert.equal(adapters.length, 5);
     assert.deepEqual(
       adapters.map((a) => a.type),
-      ["timeseries", "stat", "text", "html", "gauge", "bar", "pie", "heatmap"],
+      ["timeseries", "gauge", "bar", "pie", "heatmap"],
     );
   });
 
-  test("each adapter declares timeseries, stat, text, html, and resize capabilities", () => {
+  test("each adapter declares timeseries and resize capabilities", () => {
     const { factory } = makeEChartsFactory();
     const adapters = createEChartsAdapters({ echarts: factory });
 
@@ -71,21 +68,6 @@ describe("createEChartsAdapters", () => {
         adapter.capabilities?.supportsTimeSeries,
         true,
         `${adapter.type} supportsTimeSeries`,
-      );
-      assert.equal(
-        adapter.capabilities?.supportsStat,
-        true,
-        `${adapter.type} supportsStat`,
-      );
-      assert.equal(
-        adapter.capabilities?.supportsTextWidget,
-        true,
-        `${adapter.type} supportsTextWidget`,
-      );
-      assert.equal(
-        adapter.capabilities?.supportsHtmlWidget,
-        true,
-        `${adapter.type} supportsHtmlWidget`,
       );
       assert.equal(
         adapter.capabilities?.supportsResize,
@@ -236,83 +218,7 @@ describe("dataFramesToTimeseriesOption", () => {
   });
 });
 
-// ---------------------------------------------------------------------------
-// dataFramesToStatOption
-// ---------------------------------------------------------------------------
 
-describe("dataFramesToStatOption", () => {
-  test("reads last value of first numeric field", () => {
-    const frames = [
-      {
-        fields: [{ name: "cpu", type: "number", values: [10, 42] }],
-      },
-    ];
-
-    const option = dataFramesToStatOption(frames);
-
-    assert.equal(option.series[0].type, "gauge");
-    assert.equal(option.series[0].data[0].value, 42);
-    assert.equal(option.series[0].data[0].name, "cpu");
-  });
-
-  test("returns null value when frames are empty", () => {
-    const option = dataFramesToStatOption([]);
-    assert.equal(option.series[0].data[0].value, null);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// widgetOptionsToTextOption
-// ---------------------------------------------------------------------------
-
-describe("widgetOptionsToTextOption", () => {
-  test("sets title text from options.text", () => {
-    const option = widgetOptionsToTextOption({ text: "Hello Dashboard" });
-    assert.equal(option.title.text, "Hello Dashboard");
-  });
-
-  test("sets subtext from options.subtext", () => {
-    const option = widgetOptionsToTextOption({ text: "Title", subtext: "Sub" });
-    assert.equal(option.title.subtext, "Sub");
-  });
-
-  test("uses empty string when options.text is missing", () => {
-    const option = widgetOptionsToTextOption({});
-    assert.equal(option.title.text, "");
-  });
-
-  test("series is always empty", () => {
-    const option = widgetOptionsToTextOption({ text: "Hello" });
-    assert.deepEqual(option.series, []);
-  });
-});
-
-// ---------------------------------------------------------------------------
-// widgetOptionsToHtmlContent
-// ---------------------------------------------------------------------------
-
-describe("widgetOptionsToHtmlContent", () => {
-  test("returns sanitized html from options.html", () => {
-    const html = widgetOptionsToHtmlContent({
-      html: '<div onclick="evil()">safe</div><script>alert(1)</script>',
-    });
-
-    assert.equal(html.includes("<script"), false);
-    assert.equal(html.includes("onclick"), false);
-    assert.equal(html.includes("safe"), true);
-  });
-
-  test("uses custom sanitizer when provided", () => {
-    const html = widgetOptionsToHtmlContent(
-      { html: "<b>hello</b>" },
-      () => "SANITIZED",
-    );
-
-    assert.equal(html, "SANITIZED");
-  });
-});
-
-// ---------------------------------------------------------------------------
 // render integration — timeseries, stat, text
 // ---------------------------------------------------------------------------
 
@@ -343,95 +249,6 @@ describe("render integration", () => {
     assert.equal(calls.setOption[0].notMerge, true);
     assert.equal(calls.setOption[0].option.series.length, 1);
   });
-
-  test("stat render produces a gauge series", () => {
-    const { factory, calls } = makeEChartsFactory();
-    const adapters = createEChartsAdapters({ echarts: factory });
-    const stat = adapters.find((a) => a.type === "stat");
-    const target = makeTarget();
-
-    stat.render(
-      {
-        kind: "stat",
-        frames: [
-          { fields: [{ name: "memory", type: "number", values: [77] }] },
-        ],
-        options: {},
-        context: makeContext(),
-      },
-      target,
-    );
-
-    assert.equal(calls.setOption[0].option.series[0].type, "gauge");
-    assert.equal(calls.setOption[0].option.series[0].data[0].value, 77);
-  });
-
-  test("text render produces a title with text content", () => {
-    const { factory, calls } = makeEChartsFactory();
-    const adapters = createEChartsAdapters({ echarts: factory });
-    const text = adapters.find((a) => a.type === "text");
-    const target = makeTarget();
-
-    text.render(
-      {
-        kind: "text",
-        frames: [],
-        options: { text: "System Status" },
-        context: makeContext(),
-      },
-      target,
-    );
-
-    assert.equal(calls.setOption[0].option.title.text, "System Status");
-    assert.deepEqual(calls.setOption[0].option.series, []);
-  });
-
-  test("html render sanitizes and writes content into target element", () => {
-    const { factory } = makeEChartsFactory();
-    const adapters = createEChartsAdapters({ echarts: factory });
-    const html = adapters.find((a) => a.type === "html");
-    const target = makeTarget();
-    target.el = { innerHTML: "" };
-
-    html.render(
-      {
-        kind: "html",
-        frames: [],
-        options: {
-          html: '<p onclick="evil()">ok</p><script>alert(1)</script>',
-        },
-        context: makeContext(),
-      },
-      target,
-    );
-
-    assert.equal(target.el.innerHTML.includes("<script"), false);
-    assert.equal(target.el.innerHTML.includes("onclick"), false);
-    assert.equal(target.el.innerHTML.includes("ok"), true);
-  });
-
-  test("html render uses custom sanitizer when provided", () => {
-    const { factory } = makeEChartsFactory();
-    const adapters = createEChartsAdapters({
-      echarts: factory,
-      sanitizeHtml: () => "CUSTOM",
-    });
-    const html = adapters.find((a) => a.type === "html");
-    const target = makeTarget();
-    target.el = { innerHTML: "" };
-
-    html.render(
-      {
-        kind: "html",
-        frames: [],
-        options: { html: "<div>ignored</div>" },
-        context: makeContext(),
-      },
-      target,
-    );
-
-    assert.equal(target.el.innerHTML, "CUSTOM");
-  });
 });
 
 // ---------------------------------------------------------------------------
@@ -439,11 +256,11 @@ describe("render integration", () => {
 // ---------------------------------------------------------------------------
 
 describe("createEChartsAdapters — new kinds (gauge, bar, pie, heatmap)", () => {
-  test("returns eight adapters including the four new kinds", () => {
+  test("returns five adapters including the four chart kinds", () => {
     const { factory } = makeEChartsFactory();
     const adapters = createEChartsAdapters({ echarts: factory });
 
-    assert.equal(adapters.length, 8);
+    assert.equal(adapters.length, 5);
     const kinds = adapters.map((a) => a.type);
     for (const kind of ["gauge", "bar", "pie", "heatmap"]) {
       assert.ok(kinds.includes(kind), `expected kind '${kind}' to be present`);

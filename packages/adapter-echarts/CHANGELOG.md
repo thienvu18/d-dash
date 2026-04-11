@@ -1,5 +1,11 @@
 # @d-dash/adapter-echarts
 
+## 0.3.0
+
+### Minor Changes
+
+- Remove stat, text, html type
+
 ## 0.2.1
 
 ### Patch Changes

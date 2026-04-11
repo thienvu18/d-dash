@@ -1,17 +1,17 @@
 {
-  "name": "@d-dash/adapter-echarts",
-  "version": "0.3.0",
-  "description": "ECharts visualization adapters for d-dash",
+  "name": "@d-dash/adapter-html",
+  "version": "0.1.0",
+  "description": "Secure HTML and text visualization adapters for d-dash",
   "license": "LGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thienvu18/d-dash.git",
-    "directory": "packages/adapter-echarts"
+    "directory": "packages/adapter-html"
   },
   "bugs": {
     "url": "https://github.com/thienvu18/d-dash/issues"
   },
-  "homepage": "https://github.com/thienvu18/d-dash/tree/main/packages/adapter-echarts#readme",
+  "homepage": "https://github.com/thienvu18/d-dash/tree/main/packages/adapter-html#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -26,12 +26,11 @@
     "test": "npm run build && node --test $(find tests -name '*.spec.js')"
   },
   "peerDependencies": {
-    "@d-dash/core": "^0.3.0",
-    "echarts": "^6.0.0"
+    "@d-dash/core": "^0.3.0"
   },
   "keywords": [
     "dashboard",
-    "echarts",
+    "html",
     "adapter",
     "d-dash"
   ],
@@ -47,7 +46,6 @@
   },
   "devDependencies": {
     "@d-dash/core": "file:../core",
-    "typescript": "^6.0.0",
-    "echarts": "^6.0.0"
+    "typescript": "^6.0.0"
   }
 }
