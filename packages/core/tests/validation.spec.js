@@ -130,4 +130,17 @@ describe("validatePersistedDashboard", () => {
     assert.equal(error?.code, "SCHEMA_INVALID");
     assert.equal(error?.retriable, false);
   });
+
+  test("validates tenant in meta if provided", () => {
+    const dashboard = makeDashboard();
+    dashboard.meta.tenant = "   "; // invalid empty string
+
+    const result = validatePersistedDashboard(dashboard);
+    assert.equal(result.ok, false);
+    assert.ok(result.issues.some((i) => i.path === "meta.tenant"));
+
+    dashboard.meta.tenant = "team-a";
+    const resultOk = validatePersistedDashboard(dashboard);
+    assert.equal(resultOk.ok, true);
+  });
 });
