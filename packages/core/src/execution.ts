@@ -151,19 +151,7 @@ export function buildWidgetExecutionRequest(
       ? substituteVariablesInJsonObject(input.widget.options, vars)
       : input.widget.options;
 
-  const display = input.widget.display
-    ? {
-        ...input.widget.display,
-        title:
-          vars && typeof input.widget.display.title === "string"
-            ? substituteVariableInString(input.widget.display.title, vars)
-            : input.widget.display.title,
-        description:
-          vars && typeof input.widget.display.description === "string"
-            ? substituteVariableInString(input.widget.display.description, vars)
-            : input.widget.display.description,
-      }
-    : undefined;
+  const display = input.widget.display;
 
   return {
     dashboardId: input.dashboardId,

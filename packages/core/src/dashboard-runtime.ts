@@ -30,6 +30,8 @@ export type RuntimeEvent =
       dashboardId: string;
       durationMs: number;
       status: "success" | "partial" | "error";
+      /** Resolved (variable-substituted) display properties for this widget. */
+      resolvedDisplay?: { title?: string; description?: string };
     }
   | {
       type: "widget.execute.failed";
@@ -535,6 +537,7 @@ export function createDashboardRuntime(
       const dashboardId = input.session.dashboard.dashboardId;
       const widgetId = input.widgetId;
       const emit = options.onEvent;
+      const vars = input.context.resolvedVariables;
 
       emit?.({ type: "widget.execute.started", widgetId, dashboardId });
 
@@ -555,6 +558,18 @@ export function createDashboardRuntime(
           dashboardId,
           durationMs: Date.now() - startMs,
           status: result.status,
+          resolvedDisplay: widget.display
+            ? {
+                title:
+                  vars && typeof widget.display.title === "string"
+                    ? substituteVariableInString(widget.display.title, vars)
+                    : widget.display.title,
+                description:
+                  vars && typeof widget.display.description === "string"
+                    ? substituteVariableInString(widget.display.description, vars)
+                    : widget.display.description,
+              }
+            : undefined,
         });
 
         return result;
