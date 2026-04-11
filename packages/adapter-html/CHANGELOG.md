@@ -1,5 +1,9 @@
 # @d-dash/adapter-html
 
-## 0.0.1
+## 0.1.0
 
-- First release
+### Minor Changes
+
+- Initial release
+- Migration of `html` and `text` widget kinds from ECharts adapter
+- Implementation of secure, DOM-parser-based HTML sanitizer with linear state-machine fallback (fixes XSS vulnerabilities ReDoS, multi-char bypass, and 404 URL schemes)

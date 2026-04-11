@@ -5,7 +5,7 @@ Contract-first embeddable dashboard engine with a headless core and pluggable ad
 ## Highlights
 
 - Headless runtime (`@d-dash/core`) with typed contracts
-- First-party adapters for ECharts, Gridstack, REST, VictoriaMetrics, and gRPC
+- First-party adapters for ECharts, HTML, Gridstack, Table, REST, VictoriaMetrics, and gRPC
 - Persisted JSON schema separated from runtime-resolved execution model
 - Structured error model and adapter capability declarations
 
@@ -13,10 +13,13 @@ Contract-first embeddable dashboard engine with a headless core and pluggable ad
 
 - `@d-dash/core`
 - `@d-dash/adapter-echarts`
+- `@d-dash/adapter-html`
 - `@d-dash/adapter-gridstack`
+- `@d-dash/adapter-table`
 - `@d-dash/datasource-rest`
 - `@d-dash/datasource-victoriametrics`
 - `@d-dash/datasource-grpc`
+- `@d-dash/builder`
 
 ## Quick start
 

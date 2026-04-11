@@ -23,21 +23,11 @@ for (const adapter of createEChartsAdapters({ echarts })) {
 Created adapters:
 
 - `timeseries`
-- `stat`
-- `text`
-- `html`
+- `gauge`
+- `bar`
+- `pie`
+- `heatmap`
 
-## HTML sanitization
-
-The `html` adapter sanitizes `options.html` before writing it into the widget
-container. You can provide a stricter sanitizer:
-
-```ts
-const adapters = createEChartsAdapters({
-  echarts,
-  sanitizeHtml: (rawHtml) => mySanitizer(rawHtml),
-});
-```
 
 ## Target shape
 

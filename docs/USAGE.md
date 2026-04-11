@@ -31,8 +31,13 @@ registry.registerDatasource(restDatasource);
 registry.registerDatasource(grpcDatasource);
 registry.registerDatasource(victoriaMetricsDatasource);
 
-// Register all ECharts adapters (timeseries, stat, text, html, gauge, bar, pie, heatmap).
+// Register all ECharts adapters (timeseries, gauge, bar, pie, heatmap).
 for (const adapter of createEChartsAdapters({ echarts })) {
+  registry.registerVisualization(adapter);
+}
+
+// Register the HTML/Text adapters.
+for (const adapter of createHtmlAdapters()) {
   registry.registerVisualization(adapter);
 }
 
@@ -139,10 +144,14 @@ the same group name to every `EChartsTarget` and then calling `connectEChartsGro
 
 ```ts
 import { createEChartsAdapters, connectEChartsGroup } from "@d-dash/adapter-echarts";
+import { createHtmlAdapters } from "@d-dash/adapter-html";
 import * as echarts from "echarts";
 
 // Register adapters.
 for (const adapter of createEChartsAdapters({ echarts })) {
+  registry.registerVisualization(adapter);
+}
+for (const adapter of createHtmlAdapters()) {
   registry.registerVisualization(adapter);
 }
 
@@ -182,13 +191,12 @@ const restored = runtime.restoreSnapshot(JSON.parse(json));
 | Kind          | Package                     | Status      | Notes                                       |
 |---------------|-----------------------------|-------------|---------------------------------------------|
 | `timeseries`  | `@d-dash/adapter-echarts`   | Stable      | Line chart with time x-axis.                |
-| `stat`        | `@d-dash/adapter-echarts`   | Stable      | Single-value gauge display.                 |
-| `text`        | `@d-dash/adapter-echarts`   | Stable      | Static text/subtitle card.                  |
-| `html`        | `@d-dash/adapter-echarts`   | Stable      | Sanitized HTML content widget.              |
-| `gauge`       | `@d-dash/adapter-echarts`   | Experimental| Full ECharts gauge with min/max/thresholds. |
-| `bar`         | `@d-dash/adapter-echarts`   | Experimental| Vertical or horizontal bar chart.           |
-| `pie`         | `@d-dash/adapter-echarts`   | Experimental| Pie or donut chart.                         |
-| `heatmap`     | `@d-dash/adapter-echarts`   | Experimental| Time × category heatmap.                    |
+| `gauge`       | `@d-dash/adapter-echarts`   | Stable      | Full ECharts gauge with min/max/thresholds. |
+| `bar`         | `@d-dash/adapter-echarts`   | Stable      | Vertical or horizontal bar chart.           |
+| `pie`         | `@d-dash/adapter-echarts`   | Stable      | Pie or donut chart.                         |
+| `heatmap`     | `@d-dash/adapter-echarts`   | Stable      | Time × category heatmap.                    |
+| `text`        | `@d-dash/adapter-html`      | Stable      | Static text/subtitle card (no XSS risk).    |
+| `html`        | `@d-dash/adapter-html`      | Stable      | Sanitized HTML content widget.              |
 | `table`       | `@d-dash/adapter-table`     | Experimental| DOM-based sortable/paginated table.         |
 
 
