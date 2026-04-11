@@ -8,6 +8,10 @@
     "url": "git+https://github.com/thienvu18/d-dash.git",
     "directory": "packages/builder"
   },
+  "bugs": {
+    "url": "https://github.com/thienvu18/d-dash/issues"
+  },
+  "homepage": "https://github.com/thienvu18/d-dash/tree/main/packages/builder#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,6 +25,13 @@
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test $(find tests -name '*.spec.js')"
   },
+  "keywords": [
+    "dashboard",
+    "runtime",
+    "sdk",
+    "builder",
+    "d-dash"
+  ],
   "dependencies": {
     "@d-dash/core": "^0.3.0"
   },
