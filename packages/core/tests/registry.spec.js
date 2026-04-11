@@ -87,11 +87,11 @@ describe("createAdapterRegistry", () => {
     registry.registerDatasource(makeDatasource("metrics"));
     registry.registerDatasource(makeDatasource("logs"));
     registry.registerVisualization(makeVisualization("timeseries"));
-    registry.registerVisualization(makeVisualization("stat"));
+    registry.registerVisualization(makeVisualization("gauge"));
     registry.registerGrid(makeGrid("gridstack"));
 
     assert.deepEqual(registry.listDatasourceIds(), ["metrics", "logs"]);
-    assert.deepEqual(registry.listVisualizationKinds(), ["timeseries", "stat"]);
+    assert.deepEqual(registry.listVisualizationKinds(), ["timeseries", "gauge"]);
     assert.deepEqual(registry.listGridIds(), ["gridstack"]);
   });
 });

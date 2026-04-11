@@ -19,7 +19,7 @@ const eventLogEl = document.getElementById("event-log");
 
 const WIDGET_HOST_IDS = {
   w1: "widget-timeseries",
-  w2: "widget-stat",
+  w2: "widget-gauge",
   w3: "widget-text",
   w4: "widget-html",
 };
@@ -71,7 +71,7 @@ function makeDashboard() {
         layoutId: "l2",
         datasource: "rest-metrics",
         query: { metric: "mem.usage" },
-        visualization: { type: "stat" },
+        visualization: { type: "gauge" },
         timeRange: { type: "inherit" },
         options: {
           gaugeOverrides: {

@@ -1,5 +1,11 @@
 # @d-dash/core
 
+## 0.3.1
+
+### Patch Changes
+
+- replace stat with gauge
+
 ## 0.3.0
 
 ### Minor Changes

@@ -752,14 +752,14 @@ describe("createDashboardRuntime", () => {
             name: "CPU Usage",
             unit: "percent",
             datasource: "metrics",
-            supportedVisualizations: ["timeseries", "stat"],
+            supportedVisualizations: ["timeseries", "gauge"],
           },
           {
             id: "cpu.usage",
             name: "CPU Usage Duplicate",
             unit: "percent",
             datasource: "metrics",
-            supportedVisualizations: ["timeseries", "stat"],
+            supportedVisualizations: ["timeseries", "gauge"],
           },
         ];
       },
@@ -776,7 +776,7 @@ describe("createDashboardRuntime", () => {
             name: "Log Count",
             unit: "count",
             datasource: "logs",
-            supportedVisualizations: ["stat"],
+            supportedVisualizations: ["gauge"],
           },
         ];
       },
@@ -855,7 +855,7 @@ describe("createDashboardRuntime", () => {
       render() {},
     });
     registry.registerVisualization({
-      type: "stat",
+      type: "gauge",
       render() {},
     });
 
@@ -867,7 +867,7 @@ describe("createDashboardRuntime", () => {
           layoutId: "l1",
           datasource: "metrics",
           query: { metric: "cpu.usage" },
-          visualization: { type: "stat" },
+          visualization: { type: "gauge" },
           timeRange: { type: "inherit" },
         },
       ],
@@ -969,7 +969,7 @@ describe("createDashboardRuntime", () => {
       render() {},
     });
     registry.registerVisualization({
-      type: "stat",
+      type: "gauge",
       render() {},
     });
 
@@ -984,7 +984,7 @@ describe("createDashboardRuntime", () => {
               layoutId: "l1",
               datasource: "metrics",
               query: { metric: "cpu.usage" },
-              visualization: { type: "stat" },
+              visualization: { type: "gauge" },
               timeRange: { type: "inherit" },
             },
           ],

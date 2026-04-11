@@ -81,7 +81,6 @@ export interface DatasourceAdapter {
 /** Capability flags declared by visualization adapters. */
 export type VisualizationCapabilities = {
   supportsTimeSeries?: boolean;
-  supportsStat?: boolean;
   supportsTable?: boolean;
   supportsTextWidget?: boolean;
   supportsHtmlWidget?: boolean;

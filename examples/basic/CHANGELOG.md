@@ -1,5 +1,11 @@
 # @d-dash/example-basic
 
+## 0.2.2
+
+### Patch Changes
+
+- replace stat with gauge
+
 ## 0.2.1
 
 ### Patch Changes

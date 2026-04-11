@@ -6,7 +6,7 @@ This document defines the runtime architecture and ownership boundaries for d-da
 
 1. Keep core runtime headless and framework-agnostic.
 2. Keep persisted schema portable and JSON-only.
-3. Enable adapters for gridstack.js, ECharts (timeseries/stat/text/html/gauge/bar/pie/heatmap), REST, gRPC, and VictoriaMetrics.
+3. Enable adapters for gridstack.js, ECharts (timeseries/gauge/bar/pie/heatmap), HTML (text/html), REST, gRPC, and VictoriaMetrics.
 4. Keep extension points stable for open-source contributors.
 
 ## 2. Layered Architecture
@@ -106,7 +106,7 @@ Examples:
 2. Visualization capabilities
 
 - supportsTimeSeries
-- supportsStat
+- supportsTable
 - supportsTextWidget
 - supportsHtmlWidget
 - supportsTheming
@@ -139,23 +139,28 @@ Expected mapping:
 1. DataFrame fields to ECharts series/options.
 2. Update path for data refresh and option change.
 3. Resize path wired to container/grid events.
-4. Text/HTML widget types implemented as visualization variants.
 
 First-party ECharts adapters:
 - `timeseries` — line chart with time x-axis
-- `stat` — single-value gauge display
-- `text` — static text card
-- `html` — sanitized HTML content
-- `gauge` — configurable gauge with min/max/thresholds (`@experimental`)
-- `bar` — vertical/horizontal bar chart with optional stacking/thresholds (`@experimental`)
-- `pie` — pie or donut chart (`@experimental`)
-- `heatmap` — time × category heatmap with visualMap (`@experimental`)
+- `gauge` — configurable gauge with min/max/thresholds
+- `bar` — vertical/horizontal bar chart with optional stacking/thresholds
+- `pie` — pie or donut chart
+- `heatmap` — time × category heatmap with visualMap
+
+### 7.3 HTML Adapter
+
+Expected mapping:
+
+1. Safely renders `html` and `text` widget types using a secure sanitizer.
+2. Employs a dual-path sanitization strategy for security without heavy dependencies:
+   - **Browser**: Native `DOMParser` for structural parsing (immune to regex tricks).
+   - **Node/SSR**: Linear-scan state machine (O(n), no ReDoS risk).
 
 Crosshair sync: set `EChartsTarget.group` to a shared name and call
 `connectEChartsGroup(echarts, groupName)` after all adapters are initialised.
 (`@experimental`)
 
-### 7.3 REST Datasource
+### 7.4 REST Datasource
 
 Expected mapping:
 
@@ -163,7 +168,7 @@ Expected mapping:
 2. Response envelope to DataFrame normalization.
 3. Structured error mapping.
 
-### 7.4 gRPC Datasource
+### 7.5 gRPC Datasource
 
 Expected mapping:
 
@@ -171,7 +176,7 @@ Expected mapping:
 2. Protocol payload to DataFrame normalization.
 3. Structured error mapping and retry hints.
 
-### 7.5 VictoriaMetrics Datasource
+### 7.6 VictoriaMetrics Datasource
 
 Expected mapping:
 

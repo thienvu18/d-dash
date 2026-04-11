@@ -1,5 +1,11 @@
 # @d-dash/datasource-victoriametrics
 
+## 0.1.3
+
+### Patch Changes
+
+- replace stat with gauge
+
 ## 0.1.2
 
 ### Patch Changes

@@ -76,7 +76,7 @@ export type GrpcDatasourceAdapterOptions = {
 
 const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
   "timeseries",
-  "stat",
+  "gauge",
   "table",
   "text",
   "html",

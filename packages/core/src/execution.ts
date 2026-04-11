@@ -406,7 +406,6 @@ function assertVisualizationCapability(
   capabilities:
     | {
         supportsTimeSeries?: boolean;
-        supportsStat?: boolean;
         supportsTable?: boolean;
         supportsTextWidget?: boolean;
         supportsHtmlWidget?: boolean;
@@ -420,13 +419,6 @@ function assertVisualizationCapability(
   if (kind === "timeseries" && capabilities.supportsTimeSeries === false) {
     throw new CapabilityMismatchException(
       "Visualization adapter does not support timeseries widgets.",
-      { kind },
-    );
-  }
-
-  if (kind === "stat" && capabilities.supportsStat === false) {
-    throw new CapabilityMismatchException(
-      "Visualization adapter does not support stat widgets.",
       { kind },
     );
   }

@@ -97,7 +97,6 @@ The `visualization.type` field is a string discriminator.  Recognized named valu
 | Value          | Status       | Description                      |
 |----------------|--------------|----------------------------------|
 | `timeseries`   | stable       | Line/area time series chart      |
-| `stat`         | stable       | Single-value stat card           |
 | `table`        | stable       | Data table                       |
 | `text`         | stable       | Markdown / plain-text panel      |
 | `html`         | stable       | Raw HTML panel                   |

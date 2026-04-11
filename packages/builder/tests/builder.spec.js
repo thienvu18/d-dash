@@ -56,7 +56,7 @@ describe("WidgetBuilder", () => {
     const widget = new WidgetBuilder("w1", "l1")
       .datasource("ds")
       .query("metric")
-      .visualization("stat")
+      .visualization("gauge")
       .options({ threshold: 50 })
       .build();
 
@@ -65,7 +65,7 @@ describe("WidgetBuilder", () => {
       layoutId: "l1",
       datasource: "ds",
       query: { metric: "metric", filters: undefined },
-      visualization: { type: "stat" },
+      visualization: { type: "gauge" },
       display: undefined,
       timeRange: undefined,
       options: { threshold: 50 }

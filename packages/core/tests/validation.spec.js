@@ -32,14 +32,14 @@ describe("validatePersistedDashboard", () => {
 
     const result = validatePersistedDashboard(dashboard, {
       knownDatasources: ["metrics"],
-      knownVisualizations: ["timeseries", "stat"],
+      knownVisualizations: ["timeseries", "gauge"],
       knownMetrics: [
         {
           id: "cpu.usage",
           name: "CPU Usage",
           unit: "percent",
           datasource: "metrics",
-          supportedVisualizations: ["timeseries", "stat"],
+          supportedVisualizations: ["timeseries", "gauge"],
         },
       ],
     });
@@ -94,11 +94,11 @@ describe("validatePersistedDashboard", () => {
 
   test("reports metric and visualization mismatch", () => {
     const dashboard = makeDashboard();
-    dashboard.widgets[0].visualization.type = "stat";
+    dashboard.widgets[0].visualization.type = "gauge";
 
     const result = validatePersistedDashboard(dashboard, {
       knownDatasources: ["metrics"],
-      knownVisualizations: ["timeseries", "stat"],
+      knownVisualizations: ["timeseries", "gauge"],
       knownMetrics: [
         {
           id: "cpu.usage",

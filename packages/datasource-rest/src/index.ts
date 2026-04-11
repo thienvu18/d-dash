@@ -146,7 +146,7 @@ const CAPABILITIES: DatasourceCapabilities = {
 
 const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
   "timeseries",
-  "stat",
+  "gauge",
   "table",
   "text",
   "html",

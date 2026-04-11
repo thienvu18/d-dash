@@ -42,7 +42,6 @@ export type WidgetQuery = {
 /** Visualization kind identifier used by adapter registry and widgets. */
 export type VisualizationKind =
   | "timeseries"
-  | "stat"
   | "table"
   | "text"
   | "html"
