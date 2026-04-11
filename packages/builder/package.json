@@ -1,17 +1,13 @@
 {
-  "name": "@d-dash/datasource-rest",
-  "version": "0.1.2",
-  "description": "REST datasource adapter for d-dash",
+  "name": "@d-dash/builder",
+  "version": "0.0.1",
+  "description": "Fluent TypeScript SDK for building d-dash dashboards programmatically",
   "license": "LGPL-3.0-or-later",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/thienvu18/d-dash.git",
-    "directory": "packages/datasource-rest"
+    "directory": "packages/builder"
   },
-  "bugs": {
-    "url": "https://github.com/thienvu18/d-dash/issues"
-  },
-  "homepage": "https://github.com/thienvu18/d-dash/tree/main/packages/datasource-rest#readme",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -25,15 +21,9 @@
     "build": "tsc -p tsconfig.json",
     "test": "npm run build && node --test $(find tests -name '*.spec.js')"
   },
-  "peerDependencies": {
+  "dependencies": {
     "@d-dash/core": "^0.3.0"
   },
-  "keywords": [
-    "dashboard",
-    "datasource",
-    "rest",
-    "d-dash"
-  ],
   "files": [
     "dist",
     "README.md"
@@ -43,9 +33,5 @@
   },
   "publishConfig": {
     "access": "public"
-  },
-  "devDependencies": {
-    "@d-dash/core": "file:../core",
-    "typescript": "^6.0.0"
   }
 }

@@ -1,6 +1,6 @@
 import type { DatasourceQueryResult, GridLayoutChange } from "./adapters";
 import type { DDashError } from "./errors";
-import { executeWidget as executeWidgetOperation } from "./execution.js";
+import { executeWidget as executeWidgetOperation, substituteVariableInString } from "./execution.js";
 import type { JsonObject } from "./json";
 import type { AdapterRegistry } from "./registry";
 import {
@@ -658,12 +658,13 @@ export function createDashboardRuntime(
             // Execute a lightweight datasource query to resolve variable options.
             const adapter = options.registry.requireDatasource(variable.datasource);
             try {
+              const queryMetric = substituteVariableInString(variable.query, resolved);
               const result = await adapter.query(
                 {
-                  metric: variable.query,
+                  metric: queryMetric,
                   timeRange: session.dashboardTimeRange,
                 },
-                { traceId: `var-resolve-${variable.name}` },
+                { traceId: `var-resolve-${variable.name}`, resolvedVariables: resolved },
               );
               // Collect the first string/number field values as the resolved options.
               const values: string[] = [];

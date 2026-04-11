@@ -1,5 +1,11 @@
 # @d-dash/datasource-grpc
 
+## 0.1.2
+
+### Patch Changes
+
+- Bump core deps
+
 ## 1.0.0
 
 ### Patch Changes

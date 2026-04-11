@@ -135,9 +135,9 @@ export function buildWidgetExecutionRequest(
 
   const vars = input.context.resolvedVariables;
 
-  // Substitute $variableName references in filter string values when resolvedVariables are present.
+  // Substitute $variableName occurrences in filter string values.
   const filters = vars
-    ? substituteVariablesInFilters(input.widget.query.filters, vars)
+    ? substituteVariablesInJsonObject(input.widget.query.filters, vars)
     : input.widget.query.filters;
 
   // Also substitute variables in the metric field so queries like `{ metric: '$host' }` work.
@@ -146,6 +146,25 @@ export function buildWidgetExecutionRequest(
       ? substituteVariableInString(input.widget.query.metric, vars)
       : input.widget.query.metric;
 
+  const options =
+    vars && input.widget.options
+      ? substituteVariablesInJsonObject(input.widget.options, vars)
+      : input.widget.options;
+
+  const display = input.widget.display
+    ? {
+        ...input.widget.display,
+        title:
+          vars && typeof input.widget.display.title === "string"
+            ? substituteVariableInString(input.widget.display.title, vars)
+            : input.widget.display.title,
+        description:
+          vars && typeof input.widget.display.description === "string"
+            ? substituteVariableInString(input.widget.display.description, vars)
+            : input.widget.display.description,
+      }
+    : undefined;
+
   return {
     dashboardId: input.dashboardId,
     widgetId: input.widget.id,
@@ -153,7 +172,8 @@ export function buildWidgetExecutionRequest(
     query: { ...input.widget.query, metric, filters },
     visualization: input.widget.visualization,
     resolvedTimeRange,
-    options: input.widget.options,
+    options,
+    display,
     context: input.context,
   };
 }
@@ -162,7 +182,7 @@ export function buildWidgetExecutionRequest(
  * Substitutes a single `$variableName` reference in a plain string.
  * Multi-value variables use the first value.
  */
-function substituteVariableInString(
+export function substituteVariableInString(
   value: string,
   variables: import("./runtime.js").ResolvedVariables,
 ): string {
@@ -173,21 +193,16 @@ function substituteVariableInString(
   });
 }
 
-/**
- * Substitutes `$variableName` occurrences in filter string values.
- * Multi-value variables are joined with a comma.
- * Non-string filter values are left unchanged.
- */
-function substituteVariablesInFilters(
-  filters: import("./json").JsonObject | undefined,
+export function substituteVariablesInJsonObject(
+  obj: import("./json").JsonObject | undefined,
   variables: import("./runtime.js").ResolvedVariables,
 ): import("./json").JsonObject | undefined {
-  if (!filters) {
-    return filters;
+  if (!obj) {
+    return obj;
   }
 
   const result: import("./json").JsonObject = {};
-  for (const [key, value] of Object.entries(filters)) {
+  for (const [key, value] of Object.entries(obj)) {
     if (typeof value === "string") {
       result[key] = value.replace(/\$([a-zA-Z_][a-zA-Z0-9_]*)/g, (_, varName: string) => {
         const resolved = variables[varName];
@@ -196,6 +211,9 @@ function substituteVariablesInFilters(
         }
         return Array.isArray(resolved) ? resolved.join(",") : resolved;
       });
+    } else if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+      // Recursively substitute inner objects
+      result[key] = substituteVariablesInJsonObject(value as import("./json").JsonObject, variables) as import("./json").JsonValue;
     } else {
       result[key] = value;
     }

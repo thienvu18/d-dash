@@ -3,6 +3,7 @@ import type {
   PersistedWidget,
   WidgetQuery,
   WidgetVisualization,
+  WidgetDisplay,
 } from "./schema";
 
 /** Fully resolved absolute time range used for execution. */
@@ -43,6 +44,7 @@ export type ResolvedWidgetExecutionRequest = {
   visualization: WidgetVisualization;
   resolvedTimeRange: ResolvedTimeRange;
   options?: JsonObject;
+  display?: WidgetDisplay;
   context: RuntimeContext;
 };
 

@@ -1,5 +1,18 @@
 # @d-dash/adapter-echarts
 
+## 0.2.1
+
+### Patch Changes
+
+- Bump core deps
+
+## 0.2.0
+
+### Minor Changes
+
+- d0142f9: Add gauge/bar/pie/heatmap type to echart adapter
+  Add variables to core
+
 ## 1.0.0
 
 ### Patch Changes

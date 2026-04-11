@@ -263,6 +263,34 @@ describe("buildWidgetExecutionRequest — variable substitution", () => {
     assert.equal(req.query.filters.env, "prod");
   });
 
+  test("substitutes $variable references in widget display and options", () => {
+    const widget = {
+      id: "w1",
+      layoutId: "l1",
+      datasource: "metrics",
+      query: { metric: "cpu.usage" },
+      display: { title: "Metrics for $host", description: "Env: $env" },
+      options: { text: "Hello $host", nested: { prop: "$env" } },
+      visualization: { type: "text" },
+    };
+    const context = {
+      traceId: "trace-1",
+      resolvedVariables: { host: "web-1", env: "prod" },
+    };
+
+    const req = buildWidgetExecutionRequest({
+      dashboardId: "dash-1",
+      widget,
+      dashboardTimeRange,
+      context,
+    });
+
+    assert.equal(req.display.title, "Metrics for web-1");
+    assert.equal(req.display.description, "Env: prod");
+    assert.equal(req.options.text, "Hello web-1");
+    assert.equal(req.options.nested.prop, "prod");
+  });
+
   test("joins multi-value variables with comma", () => {
     const widget = {
       id: "w1",
@@ -470,6 +498,38 @@ describe("DashboardRuntime.resolveVariables — query variable", () => {
     assert.equal(seen[0].request.metric, "hosts");
     // Single-value mode (multi not set): first value from the field.
     assert.equal(resolved.host, "web-1");
+  });
+
+  test("resolves chained dependency where query 2 uses resolved value of query 1", async () => {
+    const registry = createAdapterRegistry();
+    const seen = [];
+    registry.registerDatasource({
+      id: "metrics",
+      async query(request) {
+        seen.push(request.metric);
+        return {
+          status: "success",
+          frames: [{ fields: [{ name: "value", type: "string", values: ["resolved-" + request.metric] }] }],
+        };
+      },
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const dashboard = makeBaseDashboard({
+      variables: [
+        { type: "query", name: "env", datasource: "metrics", query: "get-env" },
+        { type: "query", name: "host", datasource: "metrics", query: "get-host?env=$env" },
+      ],
+    });
+    const session = runtime.createSession(dashboard);
+
+    const resolved = await runtime.resolveVariables(session);
+
+    assert.equal(seen.length, 2);
+    assert.equal(seen[0], "get-env");
+    assert.equal(seen[1], "get-host?env=resolved-get-env");
+    assert.equal(resolved.env, "resolved-get-env");
+    assert.equal(resolved.host, "resolved-get-host?env=resolved-get-env");
   });
 
   test("resolves as array when variable.multi is true", async () => {

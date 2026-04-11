@@ -15,6 +15,7 @@ export type DashboardMeta = {
   description?: string;
   tags?: string[];
   folder?: string;
+  tenant?: string;
 };
 
 /** Persisted layout entry for a dashboard widget tile. */

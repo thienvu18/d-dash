@@ -77,6 +77,14 @@ export function validatePersistedDashboard(
     });
   }
 
+  if (dashboard.meta?.tenant !== undefined && !isNonEmptyString(dashboard.meta.tenant)) {
+    issues.push({
+      code: "REQUIRED_FIELD_MISSING",
+      path: "meta.tenant",
+      message: "meta.tenant must be a non-empty string.",
+    });
+  }
+
   validateTimeRange(dashboard.timeRange, "timeRange", issues);
 
   const layoutIds = new Set<string>();

@@ -1,5 +1,11 @@
 # @d-dash/example-basic
 
+## 0.2.1
+
+### Patch Changes
+
+- Bump core deps
+
 ## 0.2.0
 
 ### Minor Changes
