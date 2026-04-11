@@ -1,5 +1,11 @@
 # @d-dash/core
 
+## 0.3.2
+
+### Patch Changes
+
+- Resolves the double substitution cycle
+
 ## 0.3.1
 
 ### Patch Changes
