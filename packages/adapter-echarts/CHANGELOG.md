@@ -1,5 +1,12 @@
 # @d-dash/adapter-echarts
 
+## 0.3.1
+
+### Patch Changes
+
+- Updated dependencies
+  - @d-dash/core@0.4.1
+
 ## 0.3.0
 
 ### Minor Changes

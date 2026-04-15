@@ -1,6 +1,6 @@
 {
   "name": "@d-dash/builder",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Fluent TypeScript SDK for building d-dash dashboards programmatically",
   "license": "LGPL-3.0-or-later",
   "repository": {
