@@ -234,4 +234,85 @@ describe("createGrpcDatasourceAdapter", () => {
     const metrics = await adapter.getMetrics();
     assert.deepEqual(metrics, []);
   });
+
+  // ---------------------------------------------------------------------------
+  // Metric search
+  // ---------------------------------------------------------------------------
+
+  test("adapter declares supportsMetricSearch capability when client provides it", () => {
+    const adapter = createGrpcDatasourceAdapter({
+      id: "grpc",
+      client: {
+        async searchMetrics() {
+          return { metrics: [], total: 0, hasMore: false };
+        },
+        async query() {
+          return { status: "success", frames: [] };
+        },
+      },
+    });
+    assert.equal(adapter.capabilities?.supportsMetricSearch, true);
+  });
+
+  test("adapter does not declare supportsMetricSearch when client lacks it", () => {
+    const adapter = createGrpcDatasourceAdapter({
+      id: "grpc",
+      client: {
+        async query() {
+          return { status: "success", frames: [] };
+        },
+      },
+    });
+    assert.equal(adapter.capabilities?.supportsMetricSearch, undefined);
+  });
+
+  test("searchMetrics calls client.searchMetrics with positional arguments", async () => {
+    let capturedArgs = null;
+    const adapter = createGrpcDatasourceAdapter({
+      id: "grpc",
+      client: {
+        async searchMetrics(query, limit, offset) {
+          capturedArgs = { query, limit, offset };
+          return {
+            metrics: [{ id: "cpu.usage", name: "CPU Usage" }],
+            total: 1,
+            hasMore: false,
+          };
+        },
+        async query() {
+          return { status: "success", frames: [] };
+        },
+      },
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    assert.equal(capturedArgs.query, "cpu");
+    assert.equal(capturedArgs.limit, 10);
+    assert.equal(capturedArgs.offset, 0);
+    assert.equal(result.metrics.length, 1);
+    assert.equal(result.metrics[0].id, "cpu.usage");
+    assert.equal(result.total, 1);
+    assert.equal(result.hasMore, false);
+  });
+
+  test("searchMetrics returns empty MetricSearchResult when client throws", async () => {
+    const adapter = createGrpcDatasourceAdapter({
+      id: "grpc",
+      client: {
+        async searchMetrics() {
+          throw new Error("gRPC error");
+        },
+        async query() {
+          return { status: "success", frames: [] };
+        },
+      },
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    assert.equal(result.metrics.length, 0);
+    assert.equal(result.total, 0);
+    assert.equal(result.hasMore, false);
+  });
 });

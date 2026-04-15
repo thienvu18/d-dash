@@ -73,6 +73,7 @@ export type {
   GridCapabilities,
   GridLayoutChange,
   GridLayoutChangeHandler,
+  MetricSearchResult,
   ScalarValue,
   VisualizationAdapter,
   VisualizationCapabilities,

@@ -137,7 +137,58 @@ bound.registerWidgetTargets({ w1: el1, w2: el2 });
 await bound.updateVariables({ host: "web-2" }, { traceId: "trace-2" });
 ```
 
-## 7. Crosshair Sync (`@experimental`)
+## 7. Metric Search (`@experimental`)
+
+Datasource adapters with `supportsMetricSearch: true` can perform paginated metric searches across all registered datasources.
+
+### Using searchMetrics
+
+```ts
+// Search metrics across all datasources with support
+const result = await runtime.searchMetrics({
+  query: "cpu",
+  limit: 10,
+  offset: 0,
+});
+
+// Result structure
+// {
+//   metrics: MetricDefinition[],
+//   total: number,
+//   hasMore: boolean
+// }
+
+// For pagination
+const page2 = await runtime.searchMetrics({
+  query: "cpu",
+  limit: 10,
+  offset: 10,
+});
+```
+
+### REST Adapter Endpoint
+
+The REST adapter queries the search endpoint with pagination parameters:
+
+```
+GET {baseUrl}/metrics/search?q={query}&limit={limit}&offset={offset}
+
+Response:
+{
+  "metrics": [...],
+  "total": 100
+}
+```
+
+### VictoriaMetrics Adapter
+
+VictoriaMetrics performs client-side filtering and pagination on top of `/api/v1/label/__name__/values`.
+
+### gRPC Adapter
+
+The gRPC adapter calls the `searchMetrics` method on the client with `query`, `limit`, and `offset` parameters.
+
+## 8. Crosshair Sync (`@experimental`)
 
 ECharts tooltip crosshairs can be linked across all panels in a dashboard by assigning
 the same group name to every `EChartsTarget` and then calling `connectEChartsGroup`.

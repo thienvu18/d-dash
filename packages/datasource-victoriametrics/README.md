@@ -28,3 +28,10 @@ Responses are normalized to d-dash frames (`time` + numeric value fields), prese
 `getMetrics()` is implemented and queries
 `GET /api/v1/label/__name__/values` by default. Override with `metricsPath`
 when your VictoriaMetrics endpoint is mounted behind a custom route.
+
+## Metric search
+
+`searchMetrics(query, limit, offset)` is implemented. The adapter fetches all metric names from
+`/api/v1/label/__name__/values` and performs client-side filtering and pagination.
+
+The adapter sets `supportsMetricSearch: true` by default.

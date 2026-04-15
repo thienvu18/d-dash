@@ -830,6 +830,127 @@ describe("createDashboardRuntime", () => {
     assert.equal(logsOnly.length, 0);
   });
 
+  // ---------------------------------------------------------------------------
+  // Metric search
+  // ---------------------------------------------------------------------------
+
+  test("searchMetrics delegates to datasource adapter with supportsMetricSearch", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      capabilities: { supportsMetricSearch: true },
+      async searchMetrics(_query, _limit, _offset) {
+        return {
+          metrics: [
+            { id: "cpu.usage", name: "CPU Usage", datasource: "metrics" },
+          ],
+          total: 1,
+          hasMore: false,
+        };
+      },
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const result = await runtime.searchMetrics("metrics", "cpu", 100, 0);
+
+    assert.equal(result.metrics.length, 1);
+    assert.equal(result.metrics[0].id, "cpu.usage");
+    assert.equal(result.total, 1);
+    assert.equal(result.hasMore, false);
+  });
+
+  test("searchMetrics aggregates results from multiple datasources", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      capabilities: { supportsMetricSearch: true },
+      async searchMetrics() {
+        return {
+          metrics: [{ id: "cpu.usage", name: "CPU Usage", datasource: "metrics" }],
+          total: 1,
+          hasMore: false,
+        };
+      },
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+    registry.registerDatasource({
+      id: "logs",
+      capabilities: { supportsMetricSearch: true },
+      async searchMetrics() {
+        return {
+          metrics: [{ id: "logs.count", name: "Log Count", datasource: "logs" }],
+          total: 1,
+          hasMore: false,
+        };
+      },
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const result = await runtime.searchMetrics(undefined, "usage", 50, 0);
+
+    assert.equal(result.metrics.length, 2);
+    assert.equal(result.metrics[0].datasource, "metrics");
+    assert.equal(result.metrics[1].datasource, "logs");
+    // Each datasource returns its own pagination info
+    assert.equal(result.hasMore, false);
+  });
+
+  test("searchMetrics skips datasources without supportsMetricSearch capability", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      capabilities: { supportsMetricSearch: true },
+      async searchMetrics() {
+        return {
+          metrics: [{ id: "cpu.usage", name: "CPU Usage", datasource: "metrics" }],
+          total: 1,
+          hasMore: false,
+        };
+      },
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+    registry.registerDatasource({
+      id: "logs",
+      // No supportsMetricSearch capability
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const result = await runtime.searchMetrics(undefined, "usage", 50, 0);
+
+    assert.equal(result.metrics.length, 1);
+    assert.equal(result.metrics[0].datasource, "metrics");
+  });
+
+  test("searchMetrics returns empty result when no datasources support it", async () => {
+    const registry = createAdapterRegistry();
+    registry.registerDatasource({
+      id: "metrics",
+      async query() {
+        return { status: "success", frames: [] };
+      },
+    });
+
+    const runtime = createDashboardRuntime({ registry });
+    const result = await runtime.searchMetrics(undefined, "cpu", 100, 0);
+
+    assert.equal(result.metrics.length, 0);
+    assert.equal(result.total, 0);
+    assert.equal(result.hasMore, false);
+  });
+
   test("validateDashboardWithRegistryMetrics detects metric compatibility issues", async () => {
     const registry = createAdapterRegistry();
 

@@ -24,3 +24,10 @@ Response envelopes are normalized to d-dash `DataFrame[]` and structured query e
 
 `getMetrics()` is implemented and performs `GET ${baseUrl}/metrics` by default.
 You can override the path with `metricsPath` in adapter options.
+
+## Metric search
+
+`searchMetrics(query, limit, offset)` is implemented and performs `GET ${baseUrl}/metrics/search?q={query}&limit={limit}&offset={offset}`.
+You can override the search path with `searchPath` in adapter options.
+
+The adapter sets `supportsMetricSearch: true` when the search endpoint is available.

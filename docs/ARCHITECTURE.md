@@ -103,6 +103,7 @@ Examples:
 - supportsStreaming
 - supportsAdHocFilters
 - supportsMetadataDiscovery
+- supportsMetricSearch — enables paginated metric search with query, limit, and offset parameters
 
 2. Visualization capabilities
 

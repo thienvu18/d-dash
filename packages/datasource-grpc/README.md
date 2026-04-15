@@ -26,6 +26,13 @@ Your injected `client` handles transport specifics and returns a normalized enve
 
 - `query(request, context)` is required
 - `getMetrics()` is optional and enables metadata discovery
+- `searchMetrics(query, limit, offset)` is optional and enables paginated metric search
 
 The adapter normalizes frame payloads to d-dash `DataFrame[]` and maps gRPC
 transport and response failures into structured datasource errors.
+
+## Metric search
+
+When `searchMetrics` is provided on the client, the adapter sets `supportsMetricSearch: true`.
+The client should return `{ metrics: [...], total: number }` where `metrics` can be strings
+or objects with `id`, `name`, `unit`, and `supportedVisualizations` properties.

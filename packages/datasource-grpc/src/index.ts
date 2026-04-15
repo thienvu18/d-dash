@@ -7,6 +7,7 @@ import type {
   DatasourceQueryResult,
   DDashErrorCode,
   MetricDefinition,
+  MetricSearchResult,
   RuntimeContext,
   VisualizationKind,
 } from "@d-dash/core";
@@ -57,6 +58,12 @@ export type GrpcMetricWire =
       supportedVisualizations?: VisualizationKind[];
     };
 
+/** Wire-format metric search result returned by optional search APIs. */
+export type GrpcMetricSearchResultWire = {
+  metrics: GrpcMetricWire[];
+  total: number;
+};
+
 /** Transport client contract injected into the gRPC datasource adapter. */
 export type GrpcDatasourceClient = {
   /** Execute a datasource query over gRPC and return normalized wire envelope. */
@@ -66,6 +73,12 @@ export type GrpcDatasourceClient = {
   ): Promise<GrpcResponseEnvelope>;
   /** Optionally discover supported metrics from backend metadata services. */
   getMetrics?(): Promise<GrpcMetricWire[]>;
+  /** Optionally search metrics with pagination support. */
+  searchMetrics?(
+    query: string,
+    limit: number,
+    offset: number,
+  ): Promise<GrpcMetricSearchResultWire>;
 };
 
 /** Configuration options for creating the gRPC datasource adapter. */
@@ -164,6 +177,7 @@ export function createGrpcDatasourceAdapter(
   const capabilities: DatasourceCapabilities = {
     ...BASE_CAPABILITIES,
     ...(options.client.getMetrics ? { supportsMetadataDiscovery: true } : {}),
+    ...(options.client.searchMetrics ? { supportsMetricSearch: true } : {}),
   };
 
   return {
@@ -190,6 +204,32 @@ export function createGrpcDatasourceAdapter(
         return metrics;
       } catch {
         return [];
+      }
+    },
+
+    async searchMetrics(
+      query: string,
+      limit: number,
+      offset: number = 0,
+    ): Promise<MetricSearchResult> {
+      if (!options.client.searchMetrics) {
+        return { metrics: [], total: 0, hasMore: false };
+      }
+
+      try {
+        const raw = await options.client.searchMetrics(query, limit, offset);
+        const metrics = raw.metrics
+          .map((m) => toMetricDefinition(m, options.id))
+          .filter((m) => m.id.trim().length > 0);
+        const total = raw.total ?? metrics.length;
+
+        return {
+          metrics,
+          total,
+          hasMore: offset + limit < total,
+        };
+      } catch {
+        return { metrics: [], total: 0, hasMore: false };
       }
     },
 

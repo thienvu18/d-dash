@@ -1,5 +1,11 @@
 # @d-dash/core
 
+## 0.4.0
+
+### Minor Changes
+
+- Add searchMetrics method to DatasourceAdapter and DashboardRuntime with supportsMetricSearch capability
+
 ## 0.3.2
 
 ### Patch Changes

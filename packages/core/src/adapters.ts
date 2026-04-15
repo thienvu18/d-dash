@@ -58,11 +58,23 @@ export type DatasourceQueryResult =
   | DatasourceQueryPartial
   | DatasourceQueryError;
 
+/** Result envelope for metric search with pagination support. */
+export type MetricSearchResult = {
+  /** Array of matched metric definitions. */
+  metrics: MetricDefinition[];
+  /** Total number of metrics matching the query across all pages. */
+  total: number;
+  /** Whether there are more results beyond the current page. */
+  hasMore: boolean;
+};
+
 /** Capability flags declared by datasource adapters. */
 export type DatasourceCapabilities = {
   supportsStreaming?: boolean;
   supportsAdHocFilters?: boolean;
   supportsMetadataDiscovery?: boolean;
+  /** Whether the adapter supports paginated metric search. */
+  supportsMetricSearch?: boolean;
 };
 
 /** Datasource adapter public contract implemented by plugins. */
@@ -71,6 +83,19 @@ export interface DatasourceAdapter {
   readonly capabilities?: DatasourceCapabilities;
   /** Optional metadata discovery API for known metrics. */
   getMetrics?(): Promise<MetricDefinition[]>;
+  /**
+   * Optional paginated metric search API.
+   * Supports filtering metrics by prefix/substring match with pagination.
+   * @param query - Search query string to filter metric names.
+   * @param limit - Maximum number of results to return.
+   * @param offset - Number of results to skip for pagination (default: 0).
+   * @returns Paginated list of matching metrics with total count and hasMore flag.
+   */
+  searchMetrics?(
+    query: string,
+    limit: number,
+    offset?: number,
+  ): Promise<MetricSearchResult>;
   /** Execute a datasource query and return normalized result envelopes. */
   query(
     request: DatasourceQueryRequest,

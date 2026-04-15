@@ -32,7 +32,8 @@ A datasource adapter should implement:
 
 1. id
 2. getMetrics (if supported)
-3. query(request, context)
+3. searchMetrics(query, limit, offset) (if supported)
+4. query(request, context)
 
 Recommended behavior:
 
@@ -112,8 +113,28 @@ Adapters should expose capability flags such as:
 2. supportsHtmlWidget
 3. supportsResize
 4. supportsAdHocFilters
+5. supportsMetricSearch — enables paginated metric search with query, limit, and offset
 
 Runtime can reject incompatible dashboard configurations early.
+
+### 6.1 Metric Search Capability
+
+Datasource adapters that support `supportsMetricSearch` must implement the `searchMetrics` method:
+
+```ts
+interface MetricSearchResult {
+  metrics: MetricDefinition[];
+  total: number;
+  hasMore: boolean;
+}
+
+// In your adapter
+async searchMetrics(query: string, limit: number, offset: number = 0): Promise<MetricSearchResult> {
+  // Return paginated search results
+}
+```
+
+The `DashboardRuntime` aggregates results from all datasources with `supportsMetricSearch: true`.
 
 ## 7. Conformance Testing
 

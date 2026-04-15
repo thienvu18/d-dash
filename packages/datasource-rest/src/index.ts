@@ -6,6 +6,7 @@ import type {
   DataFrame,
   DataField,
   MetricDefinition,
+  MetricSearchResult,
   VisualizationKind,
 } from "@d-dash/core";
 import type { RuntimeContext } from "@d-dash/core";
@@ -116,6 +117,12 @@ export type RestDatasourceAdapterOptions = {
    * Optional path used for metric discovery. Defaults to `${baseUrl}/metrics`.
    */
   metricsPath?: string;
+
+  /**
+   * Optional path used for paginated metric search. Defaults to `${baseUrl}/metrics/search`.
+   * The endpoint should accept query params: `?q=<query>&limit=<limit>&offset=<offset>`
+   */
+  searchMetricsPath?: string;
 };
 
 // ---------------------------------------------------------------------------
@@ -142,6 +149,7 @@ function normalizeFrames(rawFrames: RestFrame[]): DataFrame[] {
 const CAPABILITIES: DatasourceCapabilities = {
   supportsAdHocFilters: true,
   supportsMetadataDiscovery: true,
+  supportsMetricSearch: true,
 };
 
 const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
@@ -166,6 +174,12 @@ type RestMetricsResponse =
   | {
       metrics?: RestMetricWire[];
     };
+
+/** Wire format for the metric search endpoint response. */
+export type RestMetricSearchResponse = {
+  metrics: RestMetricWire[];
+  total: number;
+};
 
 function toMetricDefinition(
   metric: RestMetricWire,
@@ -269,6 +283,56 @@ export function createRestDatasourceAdapter(
         return normalizeMetricsResponse(raw, options.id);
       } catch {
         return [];
+      }
+    },
+
+    async searchMetrics(
+      query: string,
+      limit: number,
+      offset: number = 0,
+    ): Promise<MetricSearchResult> {
+      const path = options.searchMetricsPath ?? "/metrics/search";
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+      // Build query string
+      const params = new URLSearchParams();
+      if (query) {
+        params.set("q", query);
+      }
+      params.set("limit", String(limit));
+      params.set("offset", String(offset));
+
+      try {
+        const response = await resolveFetch(
+          `${options.baseUrl}${normalizedPath}?${params.toString()}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...options.headers,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return { metrics: [], total: 0, hasMore: false };
+        }
+
+        const raw = await response.json();
+        const searchResponse = raw as RestMetricSearchResponse;
+        const metrics = normalizeMetricsResponse(
+          searchResponse.metrics ?? [],
+          options.id,
+        );
+        const total = searchResponse.total ?? metrics.length;
+
+        return {
+          metrics,
+          total,
+          hasMore: offset + limit < total,
+        };
+      } catch {
+        return { metrics: [], total: 0, hasMore: false };
       }
     },
 

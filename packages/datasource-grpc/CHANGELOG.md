@@ -1,5 +1,11 @@
 # @d-dash/datasource-grpc
 
+## 0.2.0
+
+### Minor Changes
+
+- Add searchMetrics method to DatasourceAdapter and DashboardRuntime with supportsMetricSearch capability
+
 ## 0.1.3
 
 ### Patch Changes

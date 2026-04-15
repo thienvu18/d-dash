@@ -405,4 +405,92 @@ describe("createRestDatasourceAdapter", () => {
 
     assert.deepEqual(result.warnings, ["Rate limit approaching."]);
   });
+
+  // ---------------------------------------------------------------------------
+  // Metric search
+  // ---------------------------------------------------------------------------
+
+  test("adapter declares supportsMetricSearch capability by default", () => {
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+    });
+    assert.equal(adapter.capabilities?.supportsMetricSearch, true);
+  });
+
+  test("searchMetrics GETs the search endpoint with pagination parameters", async () => {
+    const { fetchFn, getLastRequest } = makeFetch({
+      metrics: [
+        { id: "cpu.usage", name: "CPU Usage" },
+      ],
+      total: 1,
+    });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    const req = getLastRequest();
+    assert.equal(req.url, `${BASE_URL}/metrics/search?q=cpu&limit=10&offset=0`);
+    assert.equal(req.init.method, "GET");
+    assert.equal(result.metrics.length, 1);
+    assert.equal(result.metrics[0].id, "cpu.usage");
+    assert.equal(result.total, 1);
+    assert.equal(result.hasMore, false);
+  });
+
+  test("searchMetrics supports custom searchMetricsPath", async () => {
+    const { fetchFn, getLastRequest } = makeFetch({
+      metrics: ["custom.metric"],
+      total: 1,
+    });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      searchMetricsPath: "/api/v1/search",
+      fetch: fetchFn,
+    });
+
+    await adapter.searchMetrics("custom", 5, 10);
+
+    const req = getLastRequest();
+    assert.equal(req.url, `${BASE_URL}/api/v1/search?q=custom&limit=5&offset=10`);
+  });
+
+  test("searchMetrics maps string metrics response", async () => {
+    const { fetchFn } = makeFetch({
+      metrics: ["cpu.usage", "mem.usage"],
+      total: 150, // total > offset + limit, so hasMore = true
+    });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+
+    const result = await adapter.searchMetrics("usage", 100, 0);
+
+    assert.equal(result.metrics.length, 2);
+    assert.equal(result.metrics[0].id, "cpu.usage");
+    assert.equal(result.metrics[0].datasource, "metrics");
+    assert.equal(result.hasMore, true); // total (150) > offset + limit (100)
+  });
+
+  test("searchMetrics returns empty result on HTTP errors", async () => {
+    const { fetchFn } = makeFetch({}, { ok: false, status: 500 });
+    const adapter = createRestDatasourceAdapter({
+      id: "metrics",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    assert.equal(result.metrics.length, 0);
+    assert.equal(result.total, 0);
+    assert.equal(result.hasMore, false);
+  });
 });

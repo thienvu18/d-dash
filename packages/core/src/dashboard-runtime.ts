@@ -1,4 +1,8 @@
-import type { DatasourceQueryResult, GridLayoutChange } from "./adapters";
+import type {
+  DatasourceQueryResult,
+  GridLayoutChange,
+  MetricSearchResult,
+} from "./adapters";
 import type { DDashError } from "./errors";
 import { executeWidget as executeWidgetOperation, substituteVariableInString } from "./execution.js";
 import type { JsonObject } from "./json";
@@ -226,6 +230,22 @@ export type DashboardRuntime = {
     input: ExecuteAllWidgetsInput
   ): Promise<ExecuteWidgetResult[]>;
   discoverMetrics(datasourceId?: string): Promise<MetricDefinition[]>;
+  /**
+   * Searches for metrics across datasources with pagination support.
+   * When datasourceId is provided, searches only that datasource.
+   * Otherwise, aggregates results from all datasources that support metric search.
+   * @param datasourceId - Optional specific datasource to search. If omitted, searches all.
+   * @param query - Search query string to filter metric names.
+   * @param limit - Maximum number of results to return.
+   * @param offset - Number of results to skip (default: 0).
+   * @returns Paginated list of matching metrics with total count and hasMore flag.
+   */
+  searchMetrics(
+    datasourceId?: string,
+    query?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<MetricSearchResult>;
   /**
    * Resolves query-type template variables via their datasource adapter and
    * returns the full `ResolvedVariables` map merged with any supplied overrides.
@@ -645,6 +665,96 @@ export function createDashboardRuntime(
       return dedupeMetrics(allMetrics);
     },
 
+    async searchMetrics(
+      datasourceId?: string,
+      query?: string,
+      limit: number = 100,
+      offset: number = 0,
+    ): Promise<MetricSearchResult> {
+      // Normalize empty query to undefined for consistent behavior
+      const searchQuery = query?.trim() || undefined;
+
+      if (datasourceId) {
+        // Search a specific datasource
+        const adapter = options.registry.requireDatasource(datasourceId);
+        if (!adapter.searchMetrics) {
+          // Fallback to getMetrics with client-side filtering and pagination
+          if (!adapter.getMetrics) {
+            return { metrics: [], total: 0, hasMore: false };
+          }
+          const allMetrics = await adapter.getMetrics();
+          const filtered = filterMetricsByQuery(allMetrics, searchQuery);
+          const paginated = filtered.slice(offset, offset + limit);
+          return {
+            metrics: paginated,
+            total: filtered.length,
+            hasMore: offset + limit < filtered.length,
+          };
+        }
+        return adapter.searchMetrics(searchQuery ?? "", limit, offset);
+      }
+
+      // Search all datasources that support metric search
+      const datasourceIds = options.registry.listDatasourceIds();
+      const supportingSearch: Array<{
+        id: string;
+        promise: Promise<MetricSearchResult>;
+      }> = [];
+      const supportingGetMetrics: Array<{
+        id: string;
+        promise: Promise<MetricDefinition[]>;
+      }> = [];
+
+      for (const id of datasourceIds) {
+        const adapter = options.registry.requireDatasource(id);
+        if (adapter.searchMetrics) {
+          supportingSearch.push({
+            id,
+            promise: adapter.searchMetrics(searchQuery ?? "", limit, 0),
+          });
+        } else if (adapter.getMetrics) {
+          supportingGetMetrics.push({
+            id,
+            promise: adapter.getMetrics(),
+          });
+        }
+      }
+
+      // Fetch from datasources that support searchMetrics
+      const searchResults = await Promise.all(
+        supportingSearch.map((s) => s.promise)
+      );
+
+      // Fetch and filter from datasources that only support getMetrics
+      const getMetricsResults = await Promise.all(
+        supportingGetMetrics.map((s) => s.promise)
+      );
+
+      const filteredGetMetrics: MetricDefinition[] = [];
+      for (const metrics of getMetricsResults) {
+        const filtered = filterMetricsByQuery(metrics, searchQuery);
+        filteredGetMetrics.push(...filtered);
+      }
+
+      // Aggregate all results
+      const allMetrics: MetricDefinition[] = [];
+      for (const result of searchResults) {
+        allMetrics.push(...result.metrics);
+      }
+      allMetrics.push(...filteredGetMetrics);
+
+      // Dedupe and paginate
+      const deduped = dedupeMetrics(allMetrics);
+      const total = deduped.length;
+      const paginated = deduped.slice(offset, offset + limit);
+
+      return {
+        metrics: paginated,
+        total,
+        hasMore: offset + limit < total,
+      };
+    },
+
     async resolveVariables(
       session: DashboardSession,
       overrides: Record<string, string | string[]> = {},
@@ -801,4 +911,18 @@ function dedupeMetrics(metrics: MetricDefinition[]): MetricDefinition[] {
   }
 
   return deduped;
+}
+
+function filterMetricsByQuery(
+  metrics: MetricDefinition[],
+  query?: string,
+): MetricDefinition[] {
+  if (!query) {
+    return metrics;
+  }
+
+  const lowerQuery = query.toLowerCase();
+  return metrics.filter((metric) =>
+    metric.id.toLowerCase().includes(lowerQuery),
+  );
 }

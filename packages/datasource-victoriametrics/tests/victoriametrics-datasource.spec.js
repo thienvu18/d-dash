@@ -300,4 +300,64 @@ describe("createVictoriaMetricsDatasourceAdapter", () => {
     assert.equal(result.error.retriable, false);
     assert.match(String(result.error.message), /timed out/);
   });
+
+  // ---------------------------------------------------------------------------
+  // Metric search
+  // ---------------------------------------------------------------------------
+
+  test("adapter declares supportsMetricSearch capability", () => {
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+    });
+    assert.equal(adapter.capabilities?.supportsMetricSearch, true);
+  });
+
+  test("searchMetrics GETs the label values endpoint with client-side filtering", async () => {
+    const { fetchFn, getLastRequest } = makeFetch({ status: "success", data: ["cpu.usage", "mem.usage"] });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    const req = getLastRequest();
+    assert.ok(req.url.includes("/api/v1/label/__name__/values"));
+    assert.equal(req.init.method, "GET");
+    assert.equal(result.metrics.length, 1);
+    assert.equal(result.metrics[0].id, "cpu.usage");
+    assert.equal(result.total, 1);
+    assert.equal(result.hasMore, false);
+  });
+
+  test("searchMetrics returns empty MetricSearchResult on HTTP errors", async () => {
+    const { fetchFn } = makeFetch({}, { ok: false, status: 500 });
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: fetchFn,
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    assert.equal(result.metrics.length, 0);
+    assert.equal(result.total, 0);
+    assert.equal(result.hasMore, false);
+  });
+
+  test("searchMetrics returns empty MetricSearchResult on network error", async () => {
+    const adapter = createVictoriaMetricsDatasourceAdapter({
+      id: "vm",
+      baseUrl: BASE_URL,
+      fetch: makeFailingFetch(new Error("ECONNREFUSED")),
+    });
+
+    const result = await adapter.searchMetrics("cpu", 10, 0);
+
+    assert.equal(result.metrics.length, 0);
+    assert.equal(result.total, 0);
+    assert.equal(result.hasMore, false);
+  });
 });

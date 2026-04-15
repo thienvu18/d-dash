@@ -8,6 +8,7 @@ import type {
   RuntimeContext,
   DDashErrorCode,
   MetricDefinition,
+  MetricSearchResult,
   VisualizationKind,
 } from "@d-dash/core";
 
@@ -43,6 +44,8 @@ export type VictoriaMetricsDatasourceAdapterOptions = {
   defaultStep?: string;
   /** Metric discovery path. Defaults to `/api/v1/label/__name__/values`. */
   metricsPath?: string;
+  /** Metric search path for paginated search. Defaults to `/api/v1/series/metadata`. */
+  searchMetricsPath?: string;
   fetch?: FetchFn;
 };
 
@@ -69,6 +72,7 @@ type VmSuccessEnvelope = {
 const CAPABILITIES: DatasourceCapabilities = {
   supportsAdHocFilters: true,
   supportsMetadataDiscovery: true,
+  supportsMetricSearch: true,
 };
 
 const DEFAULT_VISUALIZATIONS: VisualizationKind[] = [
@@ -232,6 +236,57 @@ export function createVictoriaMetricsDatasourceAdapter(
         return normalizeVmMetricDiscoveryResponse(raw, options.id);
       } catch {
         return [];
+      }
+    },
+
+    async searchMetrics(
+      query: string,
+      limit: number,
+      offset: number = 0,
+    ): Promise<MetricSearchResult> {
+      // VictoriaMetrics supports metric search via /api/v1/label/__name__/values
+      // with filtering on the server side when using Select API
+      // For simplicity, we use client-side filtering and pagination on top of getMetrics
+      const path = options.searchMetricsPath ?? "/api/v1/label/__name__/values";
+      const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+      try {
+        const response = await fetchImpl(
+          `${options.baseUrl}${normalizedPath}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              ...options.headers,
+            },
+          },
+        );
+
+        if (!response.ok) {
+          return { metrics: [], total: 0, hasMore: false };
+        }
+
+        const raw = await response.json();
+        let allMetrics = normalizeVmMetricDiscoveryResponse(raw, options.id);
+
+        // Apply query filter (case-insensitive substring match)
+        if (query) {
+          const lowerQuery = query.toLowerCase();
+          allMetrics = allMetrics.filter((m) =>
+            m.id.toLowerCase().includes(lowerQuery),
+          );
+        }
+
+        const total = allMetrics.length;
+        const paginated = allMetrics.slice(offset, offset + limit);
+
+        return {
+          metrics: paginated,
+          total,
+          hasMore: offset + limit < total,
+        };
+      } catch {
+        return { metrics: [], total: 0, hasMore: false };
       }
     },
 
