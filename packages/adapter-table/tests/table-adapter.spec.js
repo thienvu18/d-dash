@@ -146,9 +146,11 @@ describe("createTableAdapter — render", () => {
       { el },
     );
 
-    // The adapter appended a table to the container.
-    const table = el.children.find((c) => c.tagName === "TABLE");
-    assert.ok(table, "table element should be present");
+    // The adapter wraps the table in a tableWrapper div, which is in el.children.
+    const tableWrapper = el.children.find((c) => c.tagName === "DIV");
+    assert.ok(tableWrapper, "table wrapper div should be present");
+    const table = tableWrapper?.children.find((c) => c.tagName === "TABLE");
+    assert.ok(table, "table element should be present inside wrapper");
   });
 
   test("destroy clears innerHTML", () => {
@@ -196,9 +198,11 @@ describe("createTableAdapter — columnOrder option", () => {
       { el },
     );
 
-    // Inspect the header row cells.
-    const table = el.children.find((c) => c.tagName === "TABLE");
-    assert.ok(table, "table should be present");
+    // The adapter wraps the table in a tableWrapper div.
+    const tableWrapper = el.children.find((c) => c.tagName === "DIV");
+    assert.ok(tableWrapper, "table wrapper div should be present");
+    const table = tableWrapper?.children.find((c) => c.tagName === "TABLE");
+    assert.ok(table, "table should be present inside wrapper");
     // The thead was created on the table element via createTHead().
     const thead = table._thead;
     assert.ok(thead, "thead should be present");
@@ -241,8 +245,11 @@ describe("createTableAdapter — multiple frames", () => {
       { el },
     );
 
-    const table = el.children.find((c) => c.tagName === "TABLE");
-    assert.ok(table, "table should be present");
+    // The adapter wraps the table in a tableWrapper div.
+    const tableWrapper = el.children.find((c) => c.tagName === "DIV");
+    assert.ok(tableWrapper, "table wrapper div should be present");
+    const table = tableWrapper?.children.find((c) => c.tagName === "TABLE");
+    assert.ok(table, "table should be present inside wrapper");
     const thead = table._thead;
     const headerRow = thead.children[0];
     const headerCells = headerRow.children.filter((c) => c.tagName === "TH");

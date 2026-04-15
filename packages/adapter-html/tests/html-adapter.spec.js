@@ -208,9 +208,11 @@ describe("widgetOptionsToTextContent", () => {
     assert.ok(result.includes("Sub"));
   });
 
-  test("returns empty string when both text and subtext are missing", () => {
+  test("returns styled empty container when both text and subtext are missing", () => {
     const result = widgetOptionsToTextContent({});
-    assert.equal(result, "");
+    assert.ok(result.includes("padding: 16px"));
+    assert.ok(result.includes("justify-content: center"));
+    assert.ok(result.includes("</div>"));
   });
 
   test("HTML-encodes < > & \" ' in text to prevent injection", () => {
@@ -286,7 +288,8 @@ describe("createHtmlAdapters", () => {
       target,
     );
 
-    assert.equal(target.el.innerHTML, "CUSTOM");
+    assert.ok(target.el.innerHTML.includes("CUSTOM"));
+    assert.ok(target.el.innerHTML.includes("padding: 12px"));
   });
 
   test("text adapter render writes escaped text as HTML", () => {
