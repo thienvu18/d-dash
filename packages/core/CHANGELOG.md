@@ -1,5 +1,11 @@
 # @d-dash/core
 
+## 0.4.1
+
+### Patch Changes
+
+- Fix display title not substitute by vars
+
 ## 0.4.0
 
 ### Minor Changes

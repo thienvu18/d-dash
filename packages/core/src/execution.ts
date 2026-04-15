@@ -151,7 +151,10 @@ export function buildWidgetExecutionRequest(
       ? substituteVariablesInJsonObject(input.widget.options, vars)
       : input.widget.options;
 
-  const display = input.widget.display;
+  const display =
+    vars && input.widget.display
+      ? substituteVariablesInJsonObject(input.widget.display, vars)
+      : input.widget.display;
 
   return {
     dashboardId: input.dashboardId,
