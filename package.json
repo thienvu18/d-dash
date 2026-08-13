@@ -47,6 +47,6 @@
     "globals": "^17.4.0",
     "typedoc": "^0.28.18",
     "typescript": "^6.0.3",
-    "@changesets/cli": "^2.30.0"
+    "@changesets/cli": "^3.0.0"
   }
 }
