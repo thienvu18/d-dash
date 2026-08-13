@@ -27,7 +27,7 @@
   },
   "peerDependencies": {
     "@d-dash/core": "^0.4.1",
-    "gridstack": "^12.4.0"
+    "gridstack": "^12.6.0"
   },
   "keywords": [
     "dashboard",
@@ -48,6 +48,6 @@
   "devDependencies": {
     "@d-dash/core": "file:../core",
     "typescript": "^6.0.0",
-    "gridstack": "^12.4.0"
+    "gridstack": "^12.6.0"
   }
 }
