@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "@d-dash/core": "file:../core",
-    "typescript": "^6.0.0",
+    "typescript": "^6.0.3",
     "echarts": "^6.0.0"
   }
 }
