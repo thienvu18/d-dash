@@ -7,7 +7,10 @@ gridstack.js-backed `GridAdapter` for d-dash.
 This package expects:
 
 - `@d-dash/core`
-- `gridstack` (peer dependency)
+- `gridstack` 12.6 through 14.x (peer dependency)
+
+GridStack 14 replaces the `float` option with `mode`; use the option supported by
+the GridStack version installed in your application.
 
 ## Usage
 

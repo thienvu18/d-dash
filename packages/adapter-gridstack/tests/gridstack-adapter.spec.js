@@ -100,6 +100,14 @@ describe("createGridstackAdapter", () => {
     assert.deepEqual(calls.init[0].options, { column: 12 });
   });
 
+  test("init reports when GridStack cannot initialize the target", () => {
+    const adapter = createGridstackAdapter({ GridStack: { init: () => null } });
+    const target = makeTarget();
+
+    assert.throws(() => adapter.init(target), /could not initialize/);
+    assert.throws(() => adapter.applyLayout([], target), /not initialized/);
+  });
+
   test("init is idempotent — repeated calls do not create duplicate instances", () => {
     const { factory, calls } = makeGridStackFactory();
     const adapter = createGridstackAdapter({ GridStack: factory });

@@ -4,7 +4,7 @@ Thanks for contributing to d-dash.
 
 ## Development setup
 
-1. Install Node.js 18+ and npm.
+1. Install Node.js 22.11 or later in the 22.x series, Node.js 24.x, or Node.js 26+, and npm 10.9+.
 2. Run `npm install` in the repository root.
 3. Build all packages with `npm run build`.
 4. Run tests with `npm run test`.

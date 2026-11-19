@@ -65,6 +65,9 @@ export function createGridstackAdapter(
         return;
       }
       const grid = options.GridStack.init(options.gridOptions ?? {}, target.el);
+      if (!grid) {
+        throw new GridstackAdapterException("GridStack could not initialize the target.");
+      }
       instances.set(target.el, grid);
 
       if (typeof grid.on === "function") {

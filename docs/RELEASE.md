@@ -5,7 +5,7 @@ This repository uses [Changesets](https://github.com/changesets/changesets) for 
 ## Preconditions
 
 - All intended changes are merged into `main`.
-- Node.js >=20.19.0 and npm are available.
+- Node.js 22.11 or later in the 22.x series, Node.js 24.x, or Node.js 26+, and npm 10.9+ are available.
 - You have npm publish rights for `@d-dash/*`.
 - `NPM_TOKEN` is set in your environment (local) or in GitHub Actions secrets.
 

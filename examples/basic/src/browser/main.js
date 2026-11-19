@@ -1,5 +1,5 @@
-import { GridStack } from "https://cdn.jsdelivr.net/npm/gridstack@12.3.3/+esm";
-import * as echarts from "https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.esm.min.js";
+import { GridStack } from "https://cdn.jsdelivr.net/npm/gridstack@14.1.1/+esm";
+import * as echarts from "https://cdn.jsdelivr.net/npm/echarts@6.1.0/dist/echarts.esm.min.js";
 
 import {
   createAdapterRegistry,

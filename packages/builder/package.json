@@ -33,7 +33,7 @@
     "d-dash"
   ],
   "dependencies": {
-    "@d-dash/core": "^0.3.1"
+    "@d-dash/core": "^0.4.1"
   },
   "files": [
     "dist",
