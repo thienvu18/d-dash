@@ -1,17 +1,21 @@
 version: 2
-updates:
-  - package-ecosystem: "npm"
-    directory: "/"
+multi-ecosystem-groups:
+  dependencies:
     schedule:
       interval: "weekly"
-    open-pull-requests-limit: 10
+      day: "sunday"
+      time: "09:00"
+      timezone: "Asia/Ho_Chi_Minh"
     labels:
       - "dependencies"
 
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    patterns: ["*"]
+    multi-ecosystem-group: "dependencies"
+
   - package-ecosystem: "github-actions"
     directory: "/"
-    schedule:
-      interval: "weekly"
-    open-pull-requests-limit: 5
-    labels:
-      - "dependencies"
+    patterns: ["*"]
+    multi-ecosystem-group: "dependencies"
