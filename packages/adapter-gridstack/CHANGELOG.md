@@ -1,5 +1,11 @@
 # @d-dash/adapter-gridstack
 
+## 0.2.0
+
+### Minor Changes
+
+- d55f90e: Support GridStack 12 through 14, update ECharts, and align builder with core 0.4.
+
 ## 0.1.3
 
 ### Patch Changes

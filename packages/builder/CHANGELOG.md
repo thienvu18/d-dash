@@ -1,5 +1,11 @@
 # @d-dash/builder
 
+## 0.1.0
+
+### Minor Changes
+
+- d55f90e: Support GridStack 12 through 14, update ECharts, and align builder with core 0.4.
+
 ## 0.0.3
 
 ### Patch Changes
